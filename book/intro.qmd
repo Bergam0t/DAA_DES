@@ -1,0 +1,7 @@
+# Introduction
+
+This book documents the context and progression of work around creating a discrete event simulation (DES) of an air ambulance service.
+
+This work aims to create a simulated version of the day-to-day operations of air ambulance services, drawing on
+
+It is intended to provide decision **support**, allowing certain aspects of decisions around the design and resourcing of air ambulance services to be explored.

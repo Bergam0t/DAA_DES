@@ -1,0 +1,160 @@
+---
+title: Conceptual Models of the HEMS System
+---
+
+## Initial Version
+
+![](assets/2024-11-05-10-16-14.png)
+
+![](assets/2024-11-05-10-16-28.png)
+
+## Version 2
+
+![](assets/DAAT%20Model%20Flowchart.png)
+
+
+
+
+
+:::{.callout-note}
+Questions arising (SR)
+
+## Operational questions
+
+- Is current presence of doctor on only some calls due to the design of the older helicopter?
+
+## Servicing questions
+
+- How do servicing intervals/lengths vary across the different resources?
+- How often does servicing extend beyond the planned timing, and by how much? Does this vary by helicopter type?
+
+## Helicopter questions
+
+- What is the maximum expected remaining operational life on that helicopter?
+- What are the likely servicing costs of keeping the 135 running over the same period vs a new helicopter
+
+
+
+:::
+
+
+Richard Applegarth - pilot - been pilot for long time, specifically with DAAT for 3 years
+
+Paul White - paramedic, APP (advanced) , more car work than general paramedic cohort, been around the ambulance service for nearly 20 years
+
+Lee - critical care paramedic, APP, car shifts, ambulance service for a number of years
+
+Richard P - Paramedic from Yorkshire Ambulance Service, research data analysts
+Paramedic for 25 years
+
+Lauren - HEMS dispatchers/dispatch team years (on 5 years)
+
+Nigel - Critical care paramedics, DAAT for 15 years, also has a research paramedic job
+
+Josh - APP with DAAT, 5 years, about to embark on a control job, middle of night shifts (lates)
+
+
+APP -
+
+
+
+MAGPAS, EPAS and
+They did the work on golden codes with the high incidence of HEMS
+
+There's always been a big question around whether the demand is being met around the area, and they've
+
+Lee H raises question around the SWAST data
+- have been positive initial meetings around 'yes, we can support this', but nothing further since
+- Hannah unsure whether we will get it before xmas (Hannah's initial deadline for a working model)
+    - Will be needing to lean on Darren to push SWAST
+- Question around 'can we plug this in later if we get it later?'
+    - Hannah assures yes
+- Hannah assures that we can validate against currently held data
+    - *TODO: how can we build in automated validation scripts to plan ahead the
+- This is the 'contingency model' being built on our own data
+
+- Hannah communicates to them the split of the model phases and what the DES element is focussing on doing
+(I think there is also just a split of approach of how the DES is sampling times/journeys here)
+
+What does the presence of DAAT do for the number of land crews?
+
+Contingency model will be looking at CAD category in HEMSbase
+- Hannah Q for clinicians - how accurate do they feel this is?
+    - it's going to determine various parameter
+    - Job type on job page?
+    - A lot of different options that they have to scroll down, does the language fit with what they are attending (generally done retrospectively)
+        - There is some uncertainty
+        - Not passed to them by 'Airbox'? mentioned being passed on the car?
+    - Expecting
+    - Richard pointing out that this is almost 'retrospectively super-accurate' (even if it sometimes isn't filled)
+        - Richard P says feeling is that we as modelling team (and DAAT more generally) really need the SWAST data!
+    - Richard P raises that for the model: we need to decide what matters
+    - Comes into the potential for generalisability
+        - East of England paper
+    - Example given of call coming in as a head injury - but actually on site it's a fall that's then developed into a cardiac arrest. How do you categorise?
+    - Richard highlighting that we will need to be super clear on what
+    - They get this code on the car but not the aircraft - questions
+    - Richard P raises the separation of the clinical need/value here vs the audit value
+
+- Discussions around how the model is limited by this lack of data
+    - Richard separating out what
+    - And what impact are you going to have on making changes to internal services - can
+    - *thought - can we at least answer some questions about 'what if actual demand is ~ 10%, 20%, 30% higher?*
+        - *how does this reflect the *
+        -
+
+- Paul White raising the
+    - Richard P saying about how we can have an estimate/adjustment in the model where a small proportion that isn't golden code/adjustment
+    - So additional ways that we are adjusting this proportion
+
+- Lee Hilton also mentioning the possibility of HEMS requests coming in from
+    - Richard P raising - how important is this going to be from the model's perspective
+    -
+
+- Nigel Lang mentioning
+    - crew despatched to incident, mobile, then put a request before they get to the scene for HEMS
+    - often then they are told 'not until you're there - give us an update'
+        - unsure how often this is happening
+    - Lauren H senses this isn't hugely frequent
+        - a 'cry wolf' element
+        - Suggest there is frequently the
+
+- Lee H mentioning there is a North geographical bias
+    - *can HT expand on what this means?*
+
+- Lee H responding
+    - "Yes, sometimes. Or because of condition worsening. HEMS won’t allocate unless there is good suggestion of immediate need but worsening pain does fall into this category (so a broad number of patients fall within this category)"
+
+
+- Nigel L mentioning additional ways in which the crew can add value even if it's outside of
+    - e.g. an unwitnessed cardiac arrest
+    - (mentioning the helicopter vs the cars in this case - )
+    - Richard P mentioning how hard some of these benefits are to quantify
+        - *SR thought: coming at it from the DES side - looking at currently *
+
+- *TODO: is there some sort of clustering we can do here?*
+
+- *TODO: Question from me - for inter-hospital transfers, are these arranged in a different way?*
+
+-
+    - Lee H: "Agree with Paul W - they should definitely include the softer skills and we know this brings the most benefit (was reflected in the VRS report by a significant margin over procedural skills)"
+    - *SR thought: is there some kind of NLP we could do to pull some of this out? Sounds like they maybe have some sort of labelled dataset - or just
+    - Richard P does mention that we need
+        - needing to point out that
+        - this model is decision support
+
+- Lee H mentioning the possibility of
+
+- Josh B: says can't help retrospectively, but suggesting that could be additional categories added like 'advanced decision making'
+    - Richard P says 'is there ever a time this doesn't happen?'
+    - Josh B says there will be times this isn't the case
+        - intending that this will be closer
+    - Paul W - adding in things like 'debriefing' as well
+        - sense tat they know
+    - *SR thoughts: can we just get expert estimates at this point to incorporate this in some way? How much does this impact the model versus not?*
+
+
+Terminology
+- ANPDS code?
+- NMA?
+- VRS Report

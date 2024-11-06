@@ -1,0 +1,35 @@
+project:
+  type: book
+  output-dir: ../docs
+
+book:
+  title: "book"
+  author: "Sammi Rosser, Hannah Trebilcock, Richard Pilbery"
+  date: "05/11/2024"
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - intro_to_des.qmd
+    - part: "System Description"
+      chapters:
+      - system_overview.qmd
+      - helicopters_in_air_ambulance_services.qmd
+      - alternative_vehicles_in_air_ambulance_services.qmd
+      - notes_on_operations.qmd
+      - conceptual_model_system.qmd
+      - data_sources.qmd
+    - part: "Model Development"
+      chapters:
+      - model_phases.qmd
+      - model_flow_development.qmd
+    - part: "Model Code"
+      chapters:
+      - model_classes.qmd
+    - summary.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo

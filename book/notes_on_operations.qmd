@@ -1,0 +1,19 @@
+---
+title: Notes on operations
+---
+
+
+
+It is noted that DAA crews (assumed helicopter only as opposed to critical care car?) are first on scene in ~10% of incidents, acacording to the 360 degree aircraft tour.
+
+:::{.callout-note}
+Confirm this and consider what, if any, way this affects assumptions in the model.
+:::
+
+Around 40% of calls responded to have a doctor on board.
+
+:::{.callout-note}
+Confirm this and consider what, if any, way this affects assumptions in the model.
+
+How does this vary across resources and what determines it?
+:::

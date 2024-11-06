@@ -1,0 +1,22 @@
+# Model Phases
+
+Due to the complexity of the model and the deadline for an intial working version of the model for operational decision making, two key phases of model approach are planned.
+
+## Phase 1
+
+In the initial development phase, time will be used as a proxy for geographic location.
+
+i.e. rather than looking at the region the air ambulance services, historical data will be used to determine the likely travel time to different points of the region.
+
+The distribution of this data will be used for random samplign of travel times in line with - but not identical to - historical observed patterns.
+
+
+## Phase 2
+
+In the second phase, we can begin to look at the likely and possible locations for calls to come from in a different manner.
+
+In this approach, we can instead look to sample the locations of incidents; this may use the historical locations of incidents or bring in other factors such as demographics (also potentially allowing for change in demographics over time, or particular areas, to be incorporated).
+
+We can then use known travel speeds of helicopters to calculate the pure journey time, with other parts of the journey being sampled in whatever way is required.
+
+For land-based response resources, we can look at adding in different levels of complexity around travel time (e.g. simple travel time based on average travel time, more complex travel time taking into account traffic, etc.)

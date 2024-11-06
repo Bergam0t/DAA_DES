@@ -1,0 +1,173 @@
+[
+  {
+    "objectID": "intro.html",
+    "href": "intro.html",
+    "title": "1  Introduction",
+    "section": "",
+    "text": "This book documents the context and progression of work around creating a discrete event simulation (DES) of an air ambulance service.\nIt is intended to provide decision support, allowing certain aspects of decisions around the design and resourcing of air ambulance services to be explored.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "intro_to_des.html",
+    "href": "intro_to_des.html",
+    "title": "2  An Introduction to Discrete Event Simulation",
+    "section": "",
+    "text": "2.1 DES - A Plain English Summary\nA discrete event simulation creates a simulated world in which a series of entities (such as patients) and resources (such as helicopters and critical care cars) can exist.\nInside this world, we can define the complex and branching pathways that a patient can take.\nWe use a combination of historical data\nA key part of simulation modelling is (controlled) randomness.\nWe are able to run the simulation model tens, hundreds or even thousands of times with variations in the arrival times between calls/patients, the nature of patient calls, and various other semi0random elements (such as being unable to fly due to poor weather)\nThis is almost like choosing a point in time and viewing thousands of possible futures - of which only one will come to pass!\nAcross these many simulations, we can then start to answer questions about things such as\nThe additional power that exists in this technique is then being able to ask ‘what-if?’ questions and run the simulation again.",
+    "crumbs": [
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>An Introduction to Discrete Event Simulation</span>"
+    ]
+  },
+  {
+    "objectID": "intro_to_des.html#des---a-plain-english-summary",
+    "href": "intro_to_des.html#des---a-plain-english-summary",
+    "title": "2  An Introduction to Discrete Event Simulation",
+    "section": "",
+    "text": "Note\n\n\n\n\nAll models are wrong, but some are useful\n\n- George Box, Statistician\n\n\n\n\n\n\n\n\n\n\nthe percentage of demand which is being met\nthe utilisation rate of resources (e.g. how much of the available helicopter time is made use of)\n\n\n\nwhat if we had an additional helicopter?\n\nhow would the impact of this additional helicopter depend on its\n\nhome base\navailable times\nservicing schedules\nreliability\n\n\nwhat if we had an additional critical car?\n\nhow would the impact of this depend on its\n\nstarting location\nmaximum boundary\ndispatch criteria\n\n\nwhat if we changed dispatch criteria?\nwhat if we changed shift patterns?",
+    "crumbs": [
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>An Introduction to Discrete Event Simulation</span>"
+    ]
+  },
+  {
+    "objectID": "helicopters_in_air_ambulance_services.html",
+    "href": "helicopters_in_air_ambulance_services.html",
+    "title": "4  Current Fleet",
+    "section": "",
+    "text": "4.0.1 Airbus EC135",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Current Fleet</span>"
+    ]
+  },
+  {
+    "objectID": "helicopters_in_air_ambulance_services.html#comparisions-between-models",
+    "href": "helicopters_in_air_ambulance_services.html#comparisions-between-models",
+    "title": "4  Current Fleet",
+    "section": "4.1 Comparisions between models",
+    "text": "4.1 Comparisions between models\nBenefits of the H145 over the EC135 include\n\nincreased space\nincreased ability to carry\nimproved interior layout for critical care\n\nclinicians have access to the full length of the patient during transport\n\nincreased maximum all up weight (MAUW), allowing additional fuel to be carried and removing the need for refuelling prior to returning to base when operating at the extremes of the area\nincreased scope for additional people on board even when running with two paramedics and a doctor, such as\n\na patient’s parent or guardian\na trainee\n\nmore recent computer system/avionics (Helionix), including features such as\n\nHTAWS (computer-based geographical mapping system providing the crew with visual and aural alerts of terrain changes)\n\nmore pleasant\n\nWhile it is a heavier helicopter :::{.callout-note} Quantifying differences between the helicopters in terms of - time out for servicing - unscheduled time out\nAlso, while not mentioned in the literature cited above, is it reasonable to assume that this incurs higher fuel costs? :::",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Current Fleet</span>"
+    ]
+  },
+  {
+    "objectID": "helicopters_in_air_ambulance_services.html#night-vision-operations",
+    "href": "helicopters_in_air_ambulance_services.html#night-vision-operations",
+    "title": "4  Current Fleet",
+    "section": "4.2 Night vision operations",
+    "text": "4.2 Night vision operations\nAt present, both helicopters are equipped with night-vision equipment.\nThis allows the helicopters to be operated at night if crews are trained with night vision goggles (NVG).\n\n4.2.1 Night landing sites\nAt present, night landings are only possible at surveyed landing sites that have sufficient lighting.",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Current Fleet</span>"
+    ]
+  },
+  {
+    "objectID": "helicopters_in_air_ambulance_services.html#servicing",
+    "href": "helicopters_in_air_ambulance_services.html#servicing",
+    "title": "4  Current Fleet",
+    "section": "4.3 Servicing",
+    "text": "4.3 Servicing",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Current Fleet</span>"
+    ]
+  },
+  {
+    "objectID": "helicopters_in_air_ambulance_services.html#pros-and-cons-of-operating-a-uniform-fleet",
+    "href": "helicopters_in_air_ambulance_services.html#pros-and-cons-of-operating-a-uniform-fleet",
+    "title": "4  Current Fleet",
+    "section": "4.4 Pros and cons of operating a uniform fleet",
+    "text": "4.4 Pros and cons of operating a uniform fleet\n\n\n\n\n“Our Aircraft. Devon Air Ambulance Trading Company Limited.” n.d. Accessed November 5, 2024. https://daatcl.co.uk/our-aircraft/.",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Current Fleet</span>"
+    ]
+  },
+  {
+    "objectID": "notes_on_operations.html",
+    "href": "notes_on_operations.html",
+    "title": "book",
+    "section": "",
+    "text": "It is noted that DAA crews (assumed helicopter only as opposed to critical care car?) are first on scene in ~10% of incidents, acacording to the 360 degree aircraft tour.\n\n\n\n\n\n\nNote\n\n\n\nConfirm this and consider what, if any, way this affects assumptions in the model.",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>notes_on_operations.html</span>"
+    ]
+  },
+  {
+    "objectID": "data_sources.html",
+    "href": "data_sources.html",
+    "title": "8  Hemsbase",
+    "section": "",
+    "text": "8.1 HEMS Desk\nThe HEMS desk data can provide insight into incidents where a critical care (helicopter or critical care car) would have been allocated if they were available.\nThis can occur in several ways:",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Hemsbase</span>"
+    ]
+  },
+  {
+    "objectID": "data_sources.html#hems-desk",
+    "href": "data_sources.html#hems-desk",
+    "title": "8  Hemsbase",
+    "section": "",
+    "text": "The care resources are already committed on another incident\nthe care resource is offiline during operational hours\nthe care resource if offline outside of operationaal hours",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Hemsbase</span>"
+    ]
+  },
+  {
+    "objectID": "data_sources.html#tarn-data",
+    "href": "data_sources.html#tarn-data",
+    "title": "8  Hemsbase",
+    "section": "8.2 TARN Data",
+    "text": "8.2 TARN Data\nThis data can provide additional insight into those patients who were not conveyed.",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Hemsbase</span>"
+    ]
+  },
+  {
+    "objectID": "data_sources.html#swast",
+    "href": "data_sources.html#swast",
+    "title": "8  Hemsbase",
+    "section": "8.3 SWAST",
+    "text": "8.3 SWAST\nAdditional categories of possible incidents could be obtained from the local ambulance service.",
+    "crumbs": [
+      "System Description",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Hemsbase</span>"
+    ]
+  },
+  {
+    "objectID": "model_phases.html",
+    "href": "model_phases.html",
+    "title": "9  Model Phases",
+    "section": "",
+    "text": "Due to the complexity of the model and the planned",
+    "crumbs": [
+      "Model Development",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Model Phases</span>"
+    ]
+  },
+  {
+    "objectID": "summary.html",
+    "href": "summary.html",
+    "title": "11  Summary",
+    "section": "",
+    "text": "In summary, this book has no content whatsoever.",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "references.html",
+    "href": "references.html",
+    "title": "References",
+    "section": "",
+    "text": "“Our Aircraft. Devon Air Ambulance Trading Company\nLimited.” n.d. Accessed November 5, 2024. https://daatcl.co.uk/our-aircraft/.",
+    "crumbs": [
+      "References"
+    ]
+  }
+]

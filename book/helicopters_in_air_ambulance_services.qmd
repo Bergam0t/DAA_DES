@@ -1,0 +1,64 @@
+
+
+## Current Fleet
+
+Information about the current fleet is taken from @daat_aircraft_2024 and .
+
+### Airbus EC135
+
+This helicopter was purchased in 2013.
+
+It is based at the Eaglescott airfield in North Devon.
+
+
+### H145 (callsign H70)
+
+This helicopter is based at Exeter Airport
+
+It replaced another EC135 that was originally purchased in 2008.
+
+## Comparisions between models
+
+Benefits of the H145 over the EC135 include
+
+- increased space
+- increased ability to carry
+- improved interior layout for critical care
+    - clinicians have access to the full length of the patient during transport
+- increased maximum all up weight (MAUW), allowing additional fuel to be carried and removing the need for refuelling prior to returning to base when operating at the extremes of the area
+- increased scope for additional people on board even when running with two paramedics and a doctor, such as
+    - a patient's parent or guardian
+    - a trainee
+- more recent computer system/avionics (Helionix), including features such as
+    - HTAWS (computer-based geographical mapping system providing the crew with visual and aural alerts of terrain changes)
+- more pleasant working environment for staff due to features such as anti-vibration and air conditioning
+
+
+While it is a heavier helicopter
+:::{.callout-note}
+Quantifying differences between the helicopters in terms of
+- time out for servicing
+- unscheduled time out
+
+
+Also, while not mentioned in the literature cited above, is it reasonable to assume that this incurs higher fuel costs?
+:::
+
+
+
+## Night vision operations
+
+At present, both helicopters are equipped with night-vision equipment.
+
+This allows the helicopters to be operated at night if crews are trained with night vision goggles (NVG).
+
+### Night landing sites
+
+At present, night landings are only possible at surveyed landing sites that have sufficient lighting.
+
+
+
+## Servicing
+
+
+## Pros and cons of operating a uniform fleet

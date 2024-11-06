@@ -1,0 +1,44 @@
+---
+title: An Introduction to Discrete Event Simulation
+---
+
+## DES - A Plain English Summary
+
+:::{.callout-note}
+> All models are wrong, but some are useful
+
+\- George Box, Statistician
+:::
+
+A discrete event simulation creates a simulated world in which a series of entities (such as patients) and resources (such as helicopters and critical care cars) can exist.
+
+Inside this world, we can define the complex and branching pathways that a patient can take.
+
+We use a combination of historical data
+
+A key part of simulation modelling is (controlled) randomness.
+
+We are able to run the simulation model tens, hundreds or even thousands of times with variations in the arrival times between calls/patients, the nature of patient calls, and various other semi0random elements (such as being unable to fly due to poor weather)
+
+This is almost like choosing a point in time and viewing thousands of possible futures - of which only one will come to pass!
+
+Across these many simulations, we can then start to answer questions about things such as
+
+- the percentage of demand which is being met
+- the utilisation rate of resources (e.g. how much of the available helicopter time is made use of)
+
+The additional power that exists in this technique is then being able to ask 'what-if?' questions and run the simulation again.
+
+- what if we had an additional helicopter?
+    - how would the impact of this additional helicopter depend on its
+        - home base
+        - available times
+        - servicing schedules
+        - reliability
+- what if we had an additional critical car?
+    - how would the impact of this depend on its
+        - starting location
+        - maximum boundary
+        - dispatch criteria
+- what if we changed dispatch criteria?
+- what if we changed shift patterns?

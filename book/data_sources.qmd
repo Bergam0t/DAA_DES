@@ -1,0 +1,33 @@
+
+
+
+Data exists in a range of different places, namely
+
+- Hemsbase
+- HEMS Desk
+- TARN (Trauma Audit and Research Network) Data
+- Ambulance Service
+
+Data from all of these sources may not be available in the first instance of the model.
+
+## Hemsbase
+
+Since clinical independence, Hemsbase has been used as the primary storage location for data by the air ambulance charity.
+
+## HEMS Desk
+
+The HEMS desk data can provide insight into incidents where a critical care (helicopter or critical care car) would have been allocated if they were available.
+
+This can occur in several ways:
+
+- The care resources are already committed on another incident
+- the care resource is offiline during operational hours
+- the care resource if offline outside of operationaal hours
+
+## TARN Data
+
+This data can provide additional insight into those patients who were not conveyed.
+
+## SWAST
+
+Additional categories of possible incidents could be obtained from the local ambulance service.

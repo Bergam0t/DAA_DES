@@ -1,0 +1,41 @@
+---
+title: Model Code
+filters:
+   - include-code-files
+---
+
+## Entities and Resources
+
+### Patient
+
+```{.python include="../class_patient.py"}
+```
+
+### Vehicle Classes
+
+#### Ambulance
+
+```{.python include="../class_ambulance.py"}
+```
+
+#### HEMS
+
+```{.python include="../class_hems.py"}
+```
+
+
+#### HEMS Availability
+
+```{.python include="../class_hems_availability.py"}
+```
+
+
+## Simulation
+
+```{.python include="../des_hems.py"}
+```
+
+## Model Running
+
+```{.python include="../des_parallel_process.py"}
+```
