@@ -1,4 +1,4 @@
-
+# Helicopters in Air Ambulance Services
 
 ## Current Fleet
 
@@ -34,12 +34,11 @@ Benefits of the H145 over the EC135 include
 - more pleasant working environment for staff due to features such as anti-vibration and air conditioning
 
 
-While it is a heavier helicopter
 :::{.callout-note}
 Quantifying differences between the helicopters in terms of
+
 - time out for servicing
 - unscheduled time out
-
 
 Also, while not mentioned in the literature cited above, is it reasonable to assume that this incurs higher fuel costs?
 :::
@@ -60,5 +59,8 @@ At present, night landings are only possible at surveyed landing sites that have
 
 ## Servicing
 
+Coming Soon
 
 ## Pros and cons of operating a uniform fleet
+
+Coming Soon

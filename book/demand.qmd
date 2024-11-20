@@ -1,0 +1,26 @@
+# Demand Calculations
+
+Data is held by the air ambulance trust on calls that were attended or those that were passed to the air ambulance but were not attended due to HEMS or critical car unavailabity.
+[HT to confirm this]
+
+Additional external data was sought and received to allow a better estimation of the total number of incidents across the region that could benefit from HEMS attendance.
+
+## Use of External Data to Establish Full Demand
+
+### Phase 1
+
+We aim to establish the demand for HEMS in our region by applying the methodology used by colleagues in the East of England region in their recently published paper identifying nine golden AMPDS codes for dispatching HEMS. In the study, the authors identify that these nine codes are "associated with high-levels of whole-system and HEMS utility in the East of England" and they "propose that UK EMS should consider immediate HEMS dispatch to these codes".
+
+### Phase 2
+
+Once the AMPDS codes have been identified, these would be validated against clinical data held by the ambulance trust to ensure the inclusion of such AMPDS codes does not result in significant unnecessary tasking of enhanced and critical care resources.
+
+### Phase 3
+
+Once validated, pertinent durations within the overall incident time cycle and respective distributions of that data will be calculated and used as model inputs.
+
+
+
+:::{.callout-warning}
+
+:::

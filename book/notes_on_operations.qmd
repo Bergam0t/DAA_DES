@@ -2,8 +2,6 @@
 title: Notes on operations
 ---
 
-
-
 It is noted that DAA crews (assumed helicopter only as opposed to critical care car?) are first on scene in ~10% of incidents, acacording to the 360 degree aircraft tour.
 
 :::{.callout-note}
