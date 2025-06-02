@@ -152,7 +152,7 @@ if button_run_pressed:
                 my_bar.progress((run+1)/st.session_state.number_of_runs_input, text=progress_text)
 
             # Turn into a single dataframe when all runs complete
-            pd.concat(results).write_csv(Utils.RUN_RESULTS_CSV, index=False)
+            pd.concat(results).to_csv(Utils.RUN_RESULTS_CSV, index=False)
 
             my_bar.empty()
 
