@@ -30,8 +30,8 @@ from plotly.subplots import make_subplots
 
 from _app_utils import DAA_COLORSCHEME, q10, q90
 
-def make_job_count_df(path="../data/run_results.csv",
-                      params_path="../data/run_params_used.csv"):
+def make_job_count_df(params_df,
+                      run_results):
 
     """
     Given the event log produced by running the model, create a dataframe with one row per
@@ -39,21 +39,19 @@ def make_job_count_df(path="../data/run_results.csv",
     usually be present until a later entry in the log
     """
 
-    df = pd.read_csv(path)
-
     # Add callsign column if not already present in the dataframe passed to the function
-    if 'callsign' not in df.columns:
-        df = _processing_functions.make_callsign_column(df)
+    if 'callsign' not in run_results.columns:
+        run_results = _processing_functions.make_callsign_column(run_results)
 
     # hems_result and outcome columns aren't determined until a later step
     # backfill this per patient/run so we'll have access to it from the row for
     # the patient's arrival
-    df["hems_result"] = df.groupby(['P_ID', 'run_number']).hems_result.bfill()
-    df["outcome"] = df.groupby(['P_ID', 'run_number']).outcome.bfill()
+    run_results["hems_result"] = run_results.groupby(['P_ID', 'run_number']).hems_result.bfill()
+    run_results["outcome"] = run_results.groupby(['P_ID', 'run_number']).outcome.bfill()
     # same for various things around allocated resource
-    df["vehicle_type"] = df.groupby(['P_ID', 'run_number']).vehicle_type.bfill()
-    df["callsign"] = df.groupby(['P_ID', 'run_number']).callsign.bfill()
-    df["registration"] = df.groupby(['P_ID', 'run_number']).registration.bfill()
+    run_results["vehicle_type"] = run_results.groupby(['P_ID', 'run_number']).vehicle_type.bfill()
+    run_results["callsign"] = run_results.groupby(['P_ID', 'run_number']).callsign.bfill()
+    run_results["registration"] = run_results.groupby(['P_ID', 'run_number']).registration.bfill()
 
     # TODO - see what we can do about any instances where these columns remain NA
     # Think this is likely to relate to instances where there was no resource available?
@@ -61,7 +59,7 @@ def make_job_count_df(path="../data/run_results.csv",
 
     # Reduce down to just the 'arrival' row for each patient, giving us one row per patient
     # per run
-    call_df = df[df["time_type"] == "arrival"].drop(columns=['time_type', "event_type"])
+    call_df = run_results[run_results["time_type"] == "arrival"].drop(columns=['time_type', "event_type"])
     call_df.to_csv("data/call_df.csv", index=False)
     return call_df
 

@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 
+from utils import Utils
+
 import gc
 
 from scipy.stats import ks_2samp
@@ -150,7 +152,7 @@ if button_run_pressed:
                 my_bar.progress((run+1)/st.session_state.number_of_runs_input, text=progress_text)
 
             # Turn into a single dataframe when all runs complete
-            results_all_runs = pd.concat(results)
+            pd.concat(results).write_csv(Utils.RUN_RESULTS_CSV, index=False)
 
             my_bar.empty()
 
@@ -175,8 +177,6 @@ if button_run_pressed:
 
             )
             collateRunResults()
-            results_all_runs = pd.read_csv("data/run_results.csv")
-
 
         tab_names = [
             "Simulation Results Summary",
@@ -185,8 +185,6 @@ if button_run_pressed:
             "Additional Outputs",
             "Download Output"
             ]
-
-
 
         if st.session_state.create_animation_input:
             tab_names.append("Animation")
@@ -203,13 +201,23 @@ if button_run_pressed:
 
             # report_message.info("Generating Report...")
 
+        @st.cache_data
+        def load_run_results(path="data/run_results.csv"):
+            return pd.read_csv(path)
 
-        def get_job_count_df():
-            return _job_count_calculation.make_job_count_df(params_path="data/run_params_used.csv",
-                                                            path="data/run_results.csv")
+        results_all_runs = load_run_results()
 
+        @st.cache_data
         def get_params_df():
             return pd.read_csv("data/run_params_used.csv")
+
+        params_df = get_params_df()
+        @st.cache_data
+        def get_job_count_df():
+            return _job_count_calculation.make_job_count_df(
+                params_df=params_df,
+                run_results=results_all_runs
+                )
 
         with tab1:
             quarto_string += "# Key Metrics\n\n"
@@ -223,13 +231,37 @@ if button_run_pressed:
             st.info(averaged_string)
 
             report_message = st.empty()
-
-            historical_utilisation_df_complete, historical_utilisation_df_summary = (
-                _utilisation_result_calculation.make_RWC_utilisation_dataframe(
-                    historical_df_path="historical_data/historical_monthly_resource_utilisation.csv",
+            @st.cache_data
+            def get_historic_params(
                     rota_path="tests/rotas_historic/HISTORIC_HEMS_ROTA.csv",
                     callsign_path="tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv",
                     service_path="tests/rotas_historic/HISTORIC_service_dates.csv"
+                ):
+
+                historic_rota_df = pd.read_csv(rota_path)
+                historic_callsign_df = pd.read_csv(callsign_path)
+                historic_servicing_df = pd.read_csv(service_path)
+
+                return historic_rota_df, historic_callsign_df, historic_servicing_df
+
+            historic_rota_df, historic_callsign_df, historic_servicing_df = get_historic_params()
+
+            @st.cache_data
+            def get_historic_utilisation_dfs(
+                historical_monthly_resource_utilisation_path="historical_data/historical_monthly_resource_utilisation.csv"
+                ):
+                historical_monthly_resource_utilisation_df = pd.read_csv(historical_monthly_resource_utilisation_path)
+
+                return historical_monthly_resource_utilisation_df
+
+            historical_monthly_resource_utilisation_df = get_historic_utilisation_dfs()
+
+            historical_utilisation_df_complete, historical_utilisation_df_summary = (
+                _utilisation_result_calculation.make_RWC_utilisation_dataframe(
+                    historical_monthly_resource_utilisation_df,
+                    historic_rota_df,
+                    historic_callsign_df,
+                    historic_servicing_df
                     )
                 )
 
@@ -240,7 +272,9 @@ if button_run_pressed:
             t1_col1, t1_col2 = st.columns(2)
 
             with t1_col1:
-                total_average_calls_received_per_year, perc_unattended, perc_unattended_normalised = _vehicle_calculation.get_perc_unattended_string_normalised(results_all_runs)
+                total_average_calls_received_per_year, perc_unattended, perc_unattended_normalised = (
+                    _vehicle_calculation.get_perc_unattended_string_normalised(results_all_runs)
+                    )
 
                 quarto_string += "## Calls Not Attended\n\n"
 
@@ -250,7 +284,9 @@ if button_run_pressed:
                     st.metric("Average Number of Calls DAAT Resource Couldn't Attend",
                             perc_unattended,
                             border=True)
-                    missed_calls_hist_string = _job_count_calculation.plot_historical_missed_jobs_data(format="string")
+                    missed_calls_hist_string = _job_count_calculation.plot_historical_missed_jobs_data(
+                        format="string"
+                        )
                     st.caption(f"**{perc_unattended_normalised}**")
                     st.caption(f"*This compares to an average of {missed_calls_hist_string:.1f}% of calls missed historically (approximately {total_average_calls_received_per_year*(float(missed_calls_hist_string)/100):.0f} calls per year)*")
 
