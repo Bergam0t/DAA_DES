@@ -490,12 +490,11 @@ def make_SIMULATION_utilisation_summary_plot(utilisation_df_overall,
     return fig
 
 def make_RWC_utilisation_dataframe(
-        historical_df_path="../historical_data/historical_monthly_resource_utilisation.csv",
-        rota_path="../tests/rotas_historic/HISTORIC_HEMS_ROTA.csv",
-        callsign_path="../tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv",
-        service_path="../tests/rotas_historic/HISTORIC_service_dates.csv"):
-
-    historical_utilisation_df = pd.read_csv(historical_df_path)
+        historical_monthly_resource_utilisation_df,
+        historic_rota_df,
+        historic_callsign_df,
+        historic_servicing_df
+        ):
 
     def calculate_theoretical_time(
         historical_df,
@@ -511,13 +510,15 @@ def make_RWC_utilisation_dataframe(
         # print(rota_df)
 
         # Convert date columns to datetime format
-        historical_df['month'] = pd.to_datetime(historical_df['month'])
+        historical_monthly_resource_utilisation_df['month'] = pd.to_datetime(historical_monthly_resource_utilisation_df['month'])
 
         # Create a dummy dataframe with every date in the range represented
         # We'll use this to make sure days with 0 activity get factored in to the calculations
-        date_range = pd.date_range(start=historical_df['month'].min(),
-                        end=pd.offsets.MonthEnd().rollforward(historical_df['month'].max()),
-                        freq='D')
+        date_range = pd.date_range(
+            start=historical_df['month'].min(),
+            end=pd.offsets.MonthEnd().rollforward(historical_df['month'].max()),
+            freq='D'
+            )
         daily_df = pd.DataFrame({'date': date_range})
 
         # print("==historical_df==")
@@ -599,10 +600,10 @@ def make_RWC_utilisation_dataframe(
         return theoretical_availability_df
 
     theoretical_availability_df = calculate_theoretical_time(
-        historical_df=historical_utilisation_df,
-        rota_df=pd.read_csv(rota_path),
-        callsign_df=pd.read_csv(callsign_path),
-        service_df=pd.read_csv(service_path),
+        historical_df=historical_monthly_resource_utilisation_df,
+        rota_df=historic_rota_df,
+        callsign_df=historic_callsign_df,
+        service_df=historic_servicing_df,
         long_format_df=True
     )
 
@@ -613,7 +614,7 @@ def make_RWC_utilisation_dataframe(
     # theoretical_availability_df.to_csv("historical_data/calculated/theoretical_availability_historical.csv")
 
     historical_utilisation_df_times = (
-        historical_utilisation_df.set_index('month')
+        historical_monthly_resource_utilisation_df.set_index('month')
         .filter(like='total_time').reset_index()
         )
 
