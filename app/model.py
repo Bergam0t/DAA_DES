@@ -8,8 +8,6 @@ from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 
-from utils import Utils
-
 import gc
 
 from scipy.stats import ks_2samp
@@ -27,6 +25,8 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 # Simulation imports
 from des_parallel_process import runSim, parallelProcessJoblib, collateRunResults
 from _state_control import setup_state
+
+from utils import Utils
 
 from streamlit_extras.stylable_container import stylable_container
 
