@@ -111,6 +111,8 @@ if not st.session_state["visited_setup_page"]:
                     st.switch_page("setup.py")
 
 if button_run_pressed:
+    # Clear cache when new run is started
+    st.cache_data.clear()
 
     gc.collect()
 
