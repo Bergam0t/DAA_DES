@@ -10,7 +10,11 @@ import itertools
 from fitter import Fitter, get_common_distributions
 from datetime import timedelta
 from utils import Utils
-from des_parallel_process import parallelProcessJoblib, collateRunResults, removeExistingResults
+from des_parallel_process import (
+    parallelProcessJoblib,
+    collateRunResults,
+    removeExistingResults,
+)
 from datetime import datetime
 import visualisation._job_outcome_calculation as _job_outcome_calculation
 
@@ -18,22 +22,23 @@ os.chdir(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 
-class DistributionFitUtils():
+class DistributionFitUtils:
     """
-        # The DistributionFitUtils classa
+    # The DistributionFitUtils classa
 
-        This class will import a CSV, undertake some light
-        wrangling and then determine distributions and probabilities required
-        for the Discrete Event Simulation
+    This class will import a CSV, undertake some light
+    wrangling and then determine distributions and probabilities required
+    for the Discrete Event Simulation
 
-        example usage:
-            my_data = DistributionFitUtils('data/my_data.csv')
-            my_data.import_and_wrangle()
+    example usage:
+        my_data = DistributionFitUtils('data/my_data.csv')
+        my_data.import_and_wrangle()
 
     """
 
-    def __init__(self, file_path: str, calculate_school_holidays = False, school_holidays_years = 0):
-
+    def __init__(
+        self, file_path: str, calculate_school_holidays=False, school_holidays_years=0
+    ):
         self.file_path = file_path
         self.df = pd.DataFrame()
 
@@ -43,12 +48,52 @@ class DistributionFitUtils():
         self.calculate_school_holidays = calculate_school_holidays
 
         self.times_to_fit = [
-            {"hems_result": "Patient Treated but not conveyed by HEMS",
-            "times_to_fit" : ['time_allocation', 'time_mobile', 'time_to_scene', 'time_on_scene', 'time_to_clear']},
-            {"hems_result": "Patient Conveyed by HEMS" , "times_to_fit" : ['time_allocation', 'time_mobile', 'time_to_scene', 'time_on_scene', 'time_to_hospital', 'time_to_clear']},
-            {"hems_result": "Patient Conveyed by land with HEMS" , "times_to_fit" : ['time_allocation', 'time_mobile', 'time_to_scene', 'time_on_scene', 'time_to_hospital', 'time_to_clear']},
-            {"hems_result": "Stand Down" , "times_to_fit" : ['time_allocation', 'time_mobile', 'time_to_clear']},
-            {"hems_result": "Landed but no patient contact" , "times_to_fit" : ['time_allocation', 'time_mobile', 'time_to_scene', 'time_on_scene', 'time_to_clear']},
+            {
+                "hems_result": "Patient Treated but not conveyed by HEMS",
+                "times_to_fit": [
+                    "time_allocation",
+                    "time_mobile",
+                    "time_to_scene",
+                    "time_on_scene",
+                    "time_to_clear",
+                ],
+            },
+            {
+                "hems_result": "Patient Conveyed by HEMS",
+                "times_to_fit": [
+                    "time_allocation",
+                    "time_mobile",
+                    "time_to_scene",
+                    "time_on_scene",
+                    "time_to_hospital",
+                    "time_to_clear",
+                ],
+            },
+            {
+                "hems_result": "Patient Conveyed by land with HEMS",
+                "times_to_fit": [
+                    "time_allocation",
+                    "time_mobile",
+                    "time_to_scene",
+                    "time_on_scene",
+                    "time_to_hospital",
+                    "time_to_clear",
+                ],
+            },
+            {
+                "hems_result": "Stand Down",
+                "times_to_fit": ["time_allocation", "time_mobile", "time_to_clear"],
+            },
+            {
+                "hems_result": "Landed but no patient contact",
+                "times_to_fit": [
+                    "time_allocation",
+                    "time_mobile",
+                    "time_to_scene",
+                    "time_on_scene",
+                    "time_to_clear",
+                ],
+            },
         ]
 
         self.sim_tools_distr_plus = [
@@ -71,38 +116,37 @@ class DistributionFitUtils():
             "rayleigh",
             "uniform",
             "neg_binomial",
-            "zip"
+            "zip",
         ]
         # SR 16-04-2025 Have hardcoded the common distributions
         # to make setup for random number generation more robust
-        #+ get_common_distributions()
+        # + get_common_distributions()
 
     def removeExistingResults(self, folder: str) -> None:
-            """
-                Removes results from previous fitting
-            """
+        """
+        Removes results from previous fitting
+        """
 
-            matching_files = glob.glob(os.path.join(folder, "*.*"))
+        matching_files = glob.glob(os.path.join(folder, "*.*"))
 
-            print(matching_files)
+        print(matching_files)
 
-            for file in matching_files:
-                os.remove(file)
-
+        for file in matching_files:
+            os.remove(file)
 
     def getBestFit(self, q_times, distr=get_common_distributions(), show_summary=False):
         """
 
-            Convenience function for Fitter.
-            Returns model and parameters that is considered
-            the 'best fit'.
+        Convenience function for Fitter.
+        Returns model and parameters that is considered
+        the 'best fit'.
 
-            TODO: Determine how Fitter works this out
+        TODO: Determine how Fitter works this out
 
         """
 
-        if(q_times.size > 0):
-            if(len(distr) > 0):
+        if q_times.size > 0:
+            if len(distr) > 0:
                 f = Fitter(q_times, timeout=60, distributions=distr)
             else:
                 f = Fitter(q_times, timeout=60)
@@ -113,16 +157,15 @@ class DistributionFitUtils():
         else:
             return {}
 
-
     def import_and_wrangle(self):
         """
 
-            Function to import CSV, add additional columns that are required
-            and then sequentially execute other class functions to generate
-            the probabilities and distributions required for the DES.
+        Function to import CSV, add additional columns that are required
+        and then sequentially execute other class functions to generate
+        the probabilities and distributions required for the DES.
 
-            TODO: Additional logic is required to check the imported CSV
-            for missing values, incorrect columns names etc.
+        TODO: Additional logic is required to check the imported CSV
+        for missing values, incorrect columns names etc.
 
         """
 
@@ -136,29 +179,35 @@ class DistributionFitUtils():
             print(f"Cannot locate that file")
 
         # If everything is okay, crack on...
-        self.df['inc_date'] = pd.to_datetime(self.df['inc_date'])
-        self.df['date_only'] = pd.to_datetime(df['inc_date'].dt.date)
-        self.df['hour'] = self.df['inc_date'].dt.hour                      # Hour of the day
-        self.df['day_of_week'] = self.df['inc_date'].dt.day_name()         # Day of the week (e.g., Monday)
-        self.df['month'] = self.df['inc_date'].dt.month
-        self.df['quarter'] = self.df['inc_date'].dt.quarter
-        self.df['first_day_of_month'] = self.df['inc_date'].to_numpy().astype('datetime64[M]')
+        self.df["inc_date"] = pd.to_datetime(self.df["inc_date"])
+        self.df["date_only"] = pd.to_datetime(df["inc_date"].dt.date)
+        self.df["hour"] = self.df["inc_date"].dt.hour  # Hour of the day
+        self.df["day_of_week"] = self.df[
+            "inc_date"
+        ].dt.day_name()  # Day of the week (e.g., Monday)
+        self.df["month"] = self.df["inc_date"].dt.month
+        self.df["quarter"] = self.df["inc_date"].dt.quarter
+        self.df["first_day_of_month"] = (
+            self.df["inc_date"].to_numpy().astype("datetime64[M]")
+        )
 
         # Replacing a upper quartile limit on job cycle times and
         # instead using a manually specified time frame.
         # This has the advantage of allowing manual amendment of the falues
         # on the front-end
         # self.max_values_df = self.upper_allowable_time_bounds()
-        self.min_max_values_df = pd.read_csv('actual_data/upper_allowable_time_bounds.csv')
-        #print(self.min_max_values_df)
+        self.min_max_values_df = pd.read_csv(
+            "actual_data/upper_allowable_time_bounds.csv"
+        )
+        # print(self.min_max_values_df)
 
-        #This will be needed for other datasets, but has already been computed for DAA
-        #self.df['ampds_card'] = self.df['ampds_code'].str[:2]
+        # This will be needed for other datasets, but has already been computed for DAA
+        # self.df['ampds_card'] = self.df['ampds_code'].str[:2]
 
         self.removeExistingResults(Utils.HISTORICAL_FOLDER)
         self.removeExistingResults(Utils.DISTRIBUTION_FOLDER)
 
-        #get proportions of AMPDS card by hour of day
+        # get proportions of AMPDS card by hour of day
         self.hour_by_ampds_card_probs()
 
         # Determine 'best' distributions for time-based data
@@ -202,7 +251,6 @@ class DistributionFitUtils():
         # self.inter_arrival_times()
         # ============= END ARCHIVED CODE ================= #
 
-
         # ============= ARCHIVED CODE ================= #
         # Calculate probably of patient outcome
         # Note - this still needs to be run to support another one?
@@ -223,7 +271,6 @@ class DistributionFitUtils():
         # Calculate probability of HEMS result being allocated to a job based on care category and helicopter benefit
         # self.hems_result_by_care_cat_and_helicopter_benefit_probs()
         # ============= END ARCHIVED CODE ================= #
-
 
         # Calculate school holidays since servicing schedules typically avoid these dates
         if self.calculate_school_holidays:
@@ -246,56 +293,69 @@ class DistributionFitUtils():
         # Calculate proportions of ad hoc unavailability
         try:
             # self.ad_hoc_unavailability()
-            self.ad_hoc_unavailability(period_start="2022-08-01", period_end="2024-07-31")
+            self.ad_hoc_unavailability(
+                period_start="2022-08-01", period_end="2024-07-31"
+            )
         except FileNotFoundError:
             print("Couldn't find ad-hoc unavailability file")
 
     def hour_by_ampds_card_probs(self):
         """
 
-            Calculates the proportions of calls that are triaged with
-            a specific AMPDS card. This is stratified by hour of day
+        Calculates the proportions of calls that are triaged with
+        a specific AMPDS card. This is stratified by hour of day
 
-            TODO: Determine whether this should also be stratified by yearly quarter
+        TODO: Determine whether this should also be stratified by yearly quarter
 
         """
-        category_counts = self.df.groupby(['hour', 'ampds_card']).size().reset_index(name='count')
-        total_counts = category_counts.groupby('hour')['count'].transform('sum')
-        category_counts['proportion'] = round(category_counts['count'] / total_counts, 4)
+        category_counts = (
+            self.df.groupby(["hour", "ampds_card"]).size().reset_index(name="count")
+        )
+        total_counts = category_counts.groupby("hour")["count"].transform("sum")
+        category_counts["proportion"] = round(
+            category_counts["count"] / total_counts, 4
+        )
 
-        #category_counts['ampds_card'] = category_counts['ampds_card'].apply(lambda x: str(x).zfill(2))
+        # category_counts['ampds_card'] = category_counts['ampds_card'].apply(lambda x: str(x).zfill(2))
 
-        category_counts.to_csv('distribution_data/hour_by_ampds_card_probs.csv', mode="w+")
-
+        category_counts.to_csv(
+            "distribution_data/hour_by_ampds_card_probs.csv", mode="w+"
+        )
 
     def sex_by_ampds_card_probs(self):
         """
 
-            Calculates the probability that the patient will be female
-            stratified by AMPDS card.
+        Calculates the probability that the patient will be female
+        stratified by AMPDS card.
 
         """
         age_df = self.df
-        category_counts = age_df.groupby(['ampds_card', 'sex']).size().reset_index(name='count')
-        total_counts = category_counts.groupby('ampds_card')['count'].transform('sum')
-        category_counts['proportion'] = round(category_counts['count'] / total_counts, 3)
+        category_counts = (
+            age_df.groupby(["ampds_card", "sex"]).size().reset_index(name="count")
+        )
+        total_counts = category_counts.groupby("ampds_card")["count"].transform("sum")
+        category_counts["proportion"] = round(
+            category_counts["count"] / total_counts, 3
+        )
 
-        category_counts[category_counts['sex'] =='Female'].to_csv('distribution_data/sex_by_ampds_card_probs.csv', mode="w+")
+        category_counts[category_counts["sex"] == "Female"].to_csv(
+            "distribution_data/sex_by_ampds_card_probs.csv", mode="w+"
+        )
 
     def activity_time_distributions(self):
         """
 
-            Determine the 'best' distribution for each phase of a call
-            i.e. Allocation time, Mobilisation time, Time to scene
-            Time on scene, Travel time to hospital and handover, Time to clear.
-            Not all times will apply to all cases, so the class 'times_to_fit'
-            variable is a list of dictionaries, which contains the times to fit
+        Determine the 'best' distribution for each phase of a call
+        i.e. Allocation time, Mobilisation time, Time to scene
+        Time on scene, Travel time to hospital and handover, Time to clear.
+        Not all times will apply to all cases, so the class 'times_to_fit'
+        variable is a list of dictionaries, which contains the times to fit
 
-            The data is currently stratitied by HEMS_result and vehicle type fields.
+        The data is currently stratitied by HEMS_result and vehicle type fields.
 
         """
 
-        vehicle_type = self.df['vehicle_type'].dropna().unique()
+        vehicle_type = self.df["vehicle_type"].dropna().unique()
 
         # We'll need to make sure that where a distribution is missing that the time is set to 0 in the model.
         # Probably easier than complicated logic to determine what times should be available based on hems_result
@@ -303,70 +363,86 @@ class DistributionFitUtils():
         final_distr = []
 
         for row in self.times_to_fit:
-            #print(row)
-            for ttf in row['times_to_fit']:
+            # print(row)
+            for ttf in row["times_to_fit"]:
                 for vt in vehicle_type:
-                    #print(f"HEMS result is {row['hems_result']} times_to_fit is {ttf} and vehicle type is  {vt}")
+                    # print(f"HEMS result is {row['hems_result']} times_to_fit is {ttf} and vehicle type is  {vt}")
 
                     # This line might not be required if data quality is determined when importing the data
-                    max_time = self.min_max_values_df[self.min_max_values_df['time'] == ttf].max_value_mins.iloc[0]
-                    min_time = self.min_max_values_df[self.min_max_values_df['time'] == ttf].min_value_mins.iloc[0]
+                    max_time = self.min_max_values_df[
+                        self.min_max_values_df["time"] == ttf
+                    ].max_value_mins.iloc[0]
+                    min_time = self.min_max_values_df[
+                        self.min_max_values_df["time"] == ttf
+                    ].min_value_mins.iloc[0]
 
-                    #print(f"Max time is {max_time} and Min time is {min_time}")
+                    # print(f"Max time is {max_time} and Min time is {min_time}")
 
-                    if ttf == 'time_on_scene':
+                    if ttf == "time_on_scene":
                         # There is virtually no data for HEMS_result other than patient conveyed
                         # which is causing issues with fitting. For time on scene, will
                         # use a simplified fitting ignoring hems_result as a category
                         fit_times = self.df[
-                            (self.df.vehicle_type == vt) &
-                            (self.df[ttf] >= min_time) &
-                            (self.df[ttf] <= max_time)
+                            (self.df.vehicle_type == vt)
+                            & (self.df[ttf] >= min_time)
+                            & (self.df[ttf] <= max_time)
                         ][ttf]
                     else:
                         fit_times = self.df[
-                            (self.df.vehicle_type == vt) &
-                            (self.df[ttf] >= min_time) &
-                            (self.df[ttf] <= max_time) &
-                            (self.df.hems_result == row['hems_result'])
+                            (self.df.vehicle_type == vt)
+                            & (self.df[ttf] >= min_time)
+                            & (self.df[ttf] <= max_time)
+                            & (self.df.hems_result == row["hems_result"])
                         ][ttf]
-                    #print(fit_times[:10])
-                    best_fit = self.getBestFit(fit_times, distr=self.sim_tools_distr_plus)
-                    #print(best_fit)
+                    # print(fit_times[:10])
+                    best_fit = self.getBestFit(
+                        fit_times, distr=self.sim_tools_distr_plus
+                    )
+                    # print(best_fit)
 
-                    return_dict = { "vehicle_type": vt, "time_type" : ttf, "best_fit": best_fit, "hems_result": row['hems_result'], "n": len(fit_times)}
-                    #print(return_dict)
+                    return_dict = {
+                        "vehicle_type": vt,
+                        "time_type": ttf,
+                        "best_fit": best_fit,
+                        "hems_result": row["hems_result"],
+                        "n": len(fit_times),
+                    }
+                    # print(return_dict)
                     final_distr.append(return_dict)
 
-        with open('distribution_data/activity_time_distributions.txt', 'w+') as convert_file:
+        with open(
+            "distribution_data/activity_time_distributions.txt", "w+"
+        ) as convert_file:
             convert_file.write(json.dumps(final_distr))
         convert_file.close()
-
 
     def age_distributions(self):
         """
 
-            Determine the 'best' distribution for age stratified by
-            AMPDS card
+        Determine the 'best' distribution for age stratified by
+        AMPDS card
 
         """
 
         age_distr = []
 
         age_df = self.df[["age", "ampds_card"]].dropna()
-        ampds_cards = age_df['ampds_card'].unique()
+        ampds_cards = age_df["ampds_card"].unique()
         print(ampds_cards)
 
         for card in ampds_cards:
-            fit_ages = age_df[age_df['ampds_card'] == card]['age']
+            fit_ages = age_df[age_df["ampds_card"] == card]["age"]
             best_fit = self.getBestFit(fit_ages, distr=self.sim_tools_distr_plus)
-            return_dict = { "ampds_card": str(card), "best_fit": best_fit, "n": len(fit_ages)}
+            return_dict = {
+                "ampds_card": str(card),
+                "best_fit": best_fit,
+                "n": len(fit_ages),
+            }
             age_distr.append(return_dict)
 
-        with open('distribution_data/age_distributions.txt', 'w+') as convert_file:
+        with open("distribution_data/age_distributions.txt", "w+") as convert_file:
             convert_file.write(json.dumps(age_distr))
         convert_file.close()
-
 
     # def inter_arrival_times(self):
     #     """
@@ -398,7 +474,6 @@ class DistributionFitUtils():
 
     #     ia_times_df.to_csv('distribution_data/inter_arrival_times.csv', mode='w+')
 
-
     def incidents_per_day(self):
         """
         Fit distributions for number of incidents per day using actual daily counts,
@@ -409,210 +484,257 @@ class DistributionFitUtils():
         import json
         import numpy as np
 
-        inc_df = self.df[['inc_date', 'date_only', 'quarter']].copy()
-        inc_df['year'] = inc_df['date_only'].dt.year
+        inc_df = self.df[["inc_date", "date_only", "quarter"]].copy()
+        inc_df["year"] = inc_df["date_only"].dt.year
 
         # Daily incident counts
-        inc_per_day = inc_df.groupby('date_only').size().reset_index(name='jobs_per_day')
-        inc_per_day['year'] = inc_per_day['date_only'].dt.year
+        inc_per_day = (
+            inc_df.groupby("date_only").size().reset_index(name="jobs_per_day")
+        )
+        inc_per_day["year"] = inc_per_day["date_only"].dt.year
 
         # Merge quarter and season from self.df
-        date_info = self.df[['date_only', 'quarter']].drop_duplicates()
+        date_info = self.df[["date_only", "quarter"]].drop_duplicates()
 
-        if 'season' not in self.df.columns:
-            date_info['season'] = date_info['quarter'].map(lambda q: "winter" if q in [1, 4] else "summer")
+        if "season" not in self.df.columns:
+            date_info["season"] = date_info["quarter"].map(
+                lambda q: "winter" if q in [1, 4] else "summer"
+            )
         else:
             date_info = date_info.merge(
-                self.df[['date_only', 'season']].drop_duplicates(),
-                on='date_only',
-                how='left'
+                self.df[["date_only", "season"]].drop_duplicates(),
+                on="date_only",
+                how="left",
             )
 
-        inc_per_day = inc_per_day.merge(date_info, on='date_only', how='left')
+        inc_per_day = inc_per_day.merge(date_info, on="date_only", how="left")
 
         # Weight settings - simple implementation rather than biased mean thing
         year_weights = {
             2023: 1.0,
-            2024: 4.0  # 10% more weight to 2024
+            2024: 4.0,  # 10% more weight to 2024
         }
 
         # ========== SEASONAL DISTRIBUTIONS ==========
         jpd_distr = []
 
-        for season in inc_per_day['season'].dropna().unique():
-            filtered = inc_per_day[inc_per_day['season'] == season].copy()
-            filtered['weight'] = filtered['year'].map(year_weights).fillna(1.0)
+        for season in inc_per_day["season"].dropna().unique():
+            filtered = inc_per_day[inc_per_day["season"] == season].copy()
+            filtered["weight"] = filtered["year"].map(year_weights).fillna(1.0)
 
             # Repeat rows proportionally by weight
             replicated = filtered.loc[
-                filtered.index.repeat((filtered['weight'] * 10).round().astype(int))
-            ]['jobs_per_day']
+                filtered.index.repeat((filtered["weight"] * 10).round().astype(int))
+            ]["jobs_per_day"]
 
-            best_fit = self.getBestFit(np.array(replicated), distr=self.sim_tools_distr_plus)
+            best_fit = self.getBestFit(
+                np.array(replicated), distr=self.sim_tools_distr_plus
+            )
 
-            jpd_distr.append({
-                "season": season,
-                "best_fit": best_fit,
-                "min_n_per_day": int(replicated.min()),
-                "max_n_per_day": int(replicated.max()),
-                "mean_n_per_day": float(replicated.mean())
-            })
+            jpd_distr.append(
+                {
+                    "season": season,
+                    "best_fit": best_fit,
+                    "min_n_per_day": int(replicated.min()),
+                    "max_n_per_day": int(replicated.max()),
+                    "mean_n_per_day": float(replicated.mean()),
+                }
+            )
 
-        with open('distribution_data/inc_per_day_distributions.txt', 'w+') as f:
+        with open("distribution_data/inc_per_day_distributions.txt", "w+") as f:
             json.dump(jpd_distr, f)
 
         # ========== QUARTERLY DISTRIBUTIONS ==========
         jpd_qtr_distr = []
 
-        for quarter in inc_per_day['quarter'].dropna().unique():
-            filtered = inc_per_day[inc_per_day['quarter'] == quarter].copy()
-            filtered['weight'] = filtered['year'].map(year_weights).fillna(1.0)
+        for quarter in inc_per_day["quarter"].dropna().unique():
+            filtered = inc_per_day[inc_per_day["quarter"] == quarter].copy()
+            filtered["weight"] = filtered["year"].map(year_weights).fillna(1.0)
 
             replicated = filtered.loc[
-                filtered.index.repeat((filtered['weight'] * 10).round().astype(int))
-            ]['jobs_per_day']
+                filtered.index.repeat((filtered["weight"] * 10).round().astype(int))
+            ]["jobs_per_day"]
 
-            best_fit = self.getBestFit(np.array(replicated), distr=self.sim_tools_distr_plus)
+            best_fit = self.getBestFit(
+                np.array(replicated), distr=self.sim_tools_distr_plus
+            )
 
-            jpd_qtr_distr.append({
-                "quarter": int(quarter),
-                "best_fit": best_fit,
-                "min_n_per_day": int(replicated.min()),
-                "max_n_per_day": int(replicated.max()),
-                "mean_n_per_day": float(replicated.mean())
-            })
+            jpd_qtr_distr.append(
+                {
+                    "quarter": int(quarter),
+                    "best_fit": best_fit,
+                    "min_n_per_day": int(replicated.min()),
+                    "max_n_per_day": int(replicated.max()),
+                    "mean_n_per_day": float(replicated.mean()),
+                }
+            )
 
-        with open('distribution_data/inc_per_day_qtr_distributions.txt', 'w+') as f:
+        with open("distribution_data/inc_per_day_qtr_distributions.txt", "w+") as f:
             json.dump(jpd_qtr_distr, f)
 
     def incidents_per_day_samples(self, weight_map=None, scale_factor=10):
         """
-            Create weighted empirical samples of incidents per day by season and quarter.
+        Create weighted empirical samples of incidents per day by season and quarter.
         """
 
-        inc_df = self.df[['date_only', 'quarter']].copy()
-        inc_df['year'] = inc_df['date_only'].dt.year
-        inc_df['season'] = inc_df['quarter'].map(lambda q: "winter" if q in [1, 4] else "summer")
+        inc_df = self.df[["date_only", "quarter"]].copy()
+        inc_df["year"] = inc_df["date_only"].dt.year
+        inc_df["season"] = inc_df["quarter"].map(
+            lambda q: "winter" if q in [1, 4] else "summer"
+        )
 
         # Get raw counts per day
-        daily_counts = inc_df.groupby('date_only').size().reset_index(name='jobs_per_day')
-        daily_counts['year'] = daily_counts['date_only'].dt.year
+        daily_counts = (
+            inc_df.groupby("date_only").size().reset_index(name="jobs_per_day")
+        )
+        daily_counts["year"] = daily_counts["date_only"].dt.year
 
         # Merge back in season/quarter info
-        meta_info = self.df[['date_only', 'quarter']].drop_duplicates()
-        if 'season' in self.df.columns:
+        meta_info = self.df[["date_only", "quarter"]].drop_duplicates()
+        if "season" in self.df.columns:
             meta_info = meta_info.merge(
-                self.df[['date_only', 'season']].drop_duplicates(),
-                on='date_only', how='left'
+                self.df[["date_only", "season"]].drop_duplicates(),
+                on="date_only",
+                how="left",
             )
         else:
-            meta_info['season'] = meta_info['quarter'].map(lambda q: "winter" if q in [1, 4] else "summer")
+            meta_info["season"] = meta_info["quarter"].map(
+                lambda q: "winter" if q in [1, 4] else "summer"
+            )
 
-        daily_counts = daily_counts.merge(meta_info, on='date_only', how='left')
+        daily_counts = daily_counts.merge(meta_info, on="date_only", how="left")
 
         # Year weight map
         if weight_map is None:
             weight_map = {2023: 1.0, 2024: 1.1}
 
         # Compute weights
-        daily_counts['weight'] = daily_counts['year'].map(weight_map).fillna(1.0)
+        daily_counts["weight"] = daily_counts["year"].map(weight_map).fillna(1.0)
 
         # Storage
         empirical_samples = {}
 
         # Season-based
-        for season in daily_counts['season'].dropna().unique():
-            filtered = daily_counts[daily_counts['season'] == season].copy()
+        for season in daily_counts["season"].dropna().unique():
+            filtered = daily_counts[daily_counts["season"] == season].copy()
             repeated = filtered.loc[
-                filtered.index.repeat((filtered['weight'] * scale_factor).round().astype(int))
-            ]['jobs_per_day'].tolist()
+                filtered.index.repeat(
+                    (filtered["weight"] * scale_factor).round().astype(int)
+                )
+            ]["jobs_per_day"].tolist()
 
             empirical_samples[season] = repeated
 
         # Quarter-based
-        for quarter in daily_counts['quarter'].dropna().unique():
-            filtered = daily_counts[daily_counts['quarter'] == quarter].copy()
+        for quarter in daily_counts["quarter"].dropna().unique():
+            filtered = daily_counts[daily_counts["quarter"] == quarter].copy()
             repeated = filtered.loc[
-                filtered.index.repeat((filtered['weight'] * scale_factor).round().astype(int))
-            ]['jobs_per_day'].tolist()
+                filtered.index.repeat(
+                    (filtered["weight"] * scale_factor).round().astype(int)
+                )
+            ]["jobs_per_day"].tolist()
 
             empirical_samples[f"Q{int(quarter)}"] = repeated
 
-        with open("distribution_data/inc_per_day_samples.json", 'w') as f:
+        with open("distribution_data/inc_per_day_samples.json", "w") as f:
             json.dump(empirical_samples, f)
-
 
     def enhanced_or_critical_care_by_ampds_card_probs(self):
         """
 
-            Calculates the probabilty of enhanced or critical care resource beign required
-            based on the AMPDS card
+        Calculates the probabilty of enhanced or critical care resource beign required
+        based on the AMPDS card
 
         """
 
-        ec_df = self.df[['ampds_card', 'ec_benefit', 'cc_benefit']].copy()
+        ec_df = self.df[["ampds_card", "ec_benefit", "cc_benefit"]].copy()
 
         def assign_care_category(row):
             # There are some columns with both EC and CC benefit selected
             # this function will allocate to only 1
-            if row['cc_benefit'] == 'y':
-                return 'CC'
-            elif row['ec_benefit'] == 'y':
-                return 'EC'
+            if row["cc_benefit"] == "y":
+                return "CC"
+            elif row["ec_benefit"] == "y":
+                return "EC"
             else:
-                return 'REG'
+                return "REG"
 
-        ec_df['care_category'] = ec_df.apply(assign_care_category, axis = 1)
+        ec_df["care_category"] = ec_df.apply(assign_care_category, axis=1)
 
-        care_cat_counts = ec_df.groupby(['ampds_card', 'care_category']).size().reset_index(name='count')
-        total_counts = care_cat_counts.groupby('ampds_card')['count'].transform('sum')
+        care_cat_counts = (
+            ec_df.groupby(["ampds_card", "care_category"])
+            .size()
+            .reset_index(name="count")
+        )
+        total_counts = care_cat_counts.groupby("ampds_card")["count"].transform("sum")
 
-        care_cat_counts['proportion'] = round(care_cat_counts['count'] / total_counts, 3)
+        care_cat_counts["proportion"] = round(
+            care_cat_counts["count"] / total_counts, 3
+        )
 
-        care_cat_counts.to_csv('distribution_data/enhanced_or_critical_care_by_ampds_card_probs.csv', mode = "w+", index = False)
+        care_cat_counts.to_csv(
+            "distribution_data/enhanced_or_critical_care_by_ampds_card_probs.csv",
+            mode="w+",
+            index=False,
+        )
 
     def patient_outcome_by_care_category_and_quarter_probs(self):
         """
 
-            Calculates the probabilty of a patient outcome based on care category and yearly quarter
+        Calculates the probabilty of a patient outcome based on care category and yearly quarter
 
         """
 
-        po_df = self.df[['quarter', 'ec_benefit', 'cc_benefit', 'pt_outcome']].copy()
+        po_df = self.df[["quarter", "ec_benefit", "cc_benefit", "pt_outcome"]].copy()
 
         def assign_care_category(row):
             # There are some columns with both EC and CC benefit selected
             # this function will allocate to only 1
-            if row['cc_benefit'] == 'y':
-                return 'CC'
-            elif row['ec_benefit'] == 'y':
-                return 'EC'
+            if row["cc_benefit"] == "y":
+                return "CC"
+            elif row["ec_benefit"] == "y":
+                return "EC"
             else:
-                return 'REG'
+                return "REG"
 
         # There are some values that are missing e.g. CC quarter 1 Deceased
         # I think we've had problems when trying to sample from this kind of thing before
         # As a fallback, ensure that 'missing' combinations are given a count and proportion of 0
-        outcomes = po_df['pt_outcome'].unique()
-        care_categories = ['CC', 'EC', 'REG']
-        quarters = po_df['quarter'].unique()
+        outcomes = po_df["pt_outcome"].unique()
+        care_categories = ["CC", "EC", "REG"]
+        quarters = po_df["quarter"].unique()
 
-        all_combinations = pd.DataFrame(list(itertools.product(outcomes, care_categories, quarters)),
-                                    columns=['pt_outcome', 'care_category', 'quarter'])
+        all_combinations = pd.DataFrame(
+            list(itertools.product(outcomes, care_categories, quarters)),
+            columns=["pt_outcome", "care_category", "quarter"],
+        )
 
-        po_df['care_category'] = po_df.apply(assign_care_category, axis = 1)
+        po_df["care_category"] = po_df.apply(assign_care_category, axis=1)
 
-        po_cat_counts = po_df.groupby(['pt_outcome', 'care_category', 'quarter']).size().reset_index(name='count')
+        po_cat_counts = (
+            po_df.groupby(["pt_outcome", "care_category", "quarter"])
+            .size()
+            .reset_index(name="count")
+        )
 
-        merged = pd.merge(all_combinations, po_cat_counts,
-                      on=['pt_outcome', 'care_category', 'quarter'],
-                      how='left').fillna({'count': 0})
-        merged['count'] = merged['count'].astype(int)
+        merged = pd.merge(
+            all_combinations,
+            po_cat_counts,
+            on=["pt_outcome", "care_category", "quarter"],
+            how="left",
+        ).fillna({"count": 0})
+        merged["count"] = merged["count"].astype(int)
 
-        total_counts = merged.groupby(['care_category', 'quarter'])['count'].transform('sum')
-        merged['proportion'] = round(merged['count'] / total_counts.replace(0, 1), 3)
+        total_counts = merged.groupby(["care_category", "quarter"])["count"].transform(
+            "sum"
+        )
+        merged["proportion"] = round(merged["count"] / total_counts.replace(0, 1), 3)
 
-        merged.to_csv('distribution_data/patient_outcome_by_care_category_and_quarter_probs.csv', mode = "w+", index = False)
+        merged.to_csv(
+            "distribution_data/patient_outcome_by_care_category_and_quarter_probs.csv",
+            mode="w+",
+            index=False,
+        )
 
     # def hems_results_by_patient_outcome_and_quarter_and_vehicle_type_and_callsign_group_probs(self):
     #     """
@@ -650,25 +772,35 @@ class DistributionFitUtils():
 
     #     merged.to_csv('distribution_data/hems_results_by_patient_outcome_and_quarter_and_vehicle_type_and_callsign_group_probs.csv', mode = "w+", index = False)
 
-    def hems_results_by_patient_outcome_and_time_of_day_and_quarter_and_vehicle_type_and_callsign_group_probs(self):
+    def hems_results_by_patient_outcome_and_time_of_day_and_quarter_and_vehicle_type_and_callsign_group_probs(
+        self,
+    ):
         """
 
-            Calculates the probabilty of a given HEMS result based on
-                - patient outcome
-                - yearly quarter
-                - time of day (7am - 6pm, 7pm - 6am)
-                - vehicle type
-                - and callsign group
+        Calculates the probabilty of a given HEMS result based on
+            - patient outcome
+            - yearly quarter
+            - time of day (7am - 6pm, 7pm - 6am)
+            - vehicle type
+            - and callsign group
 
         """
-        self.df['inc_date'] = pd.to_datetime(self.df['inc_date'])
-        self.df['hour'] = self.df['inc_date'].dt.hour
-        self.df['time_of_day'] = self.df['hour'].apply(lambda x: 'day' if x >= 7 and x <= 18 else "night")
+        self.df["inc_date"] = pd.to_datetime(self.df["inc_date"])
+        self.df["hour"] = self.df["inc_date"].dt.hour
+        self.df["time_of_day"] = self.df["hour"].apply(
+            lambda x: "day" if x >= 7 and x <= 18 else "night"
+        )
 
-        hr_df = self.df[[
-            'hems_result', 'quarter', 'pt_outcome',
-            'vehicle_type', 'callsign_group', 'time_of_day'
-            ]].copy()
+        hr_df = self.df[
+            [
+                "hems_result",
+                "quarter",
+                "pt_outcome",
+                "vehicle_type",
+                "callsign_group",
+                "time_of_day",
+            ]
+        ].copy()
 
         # There are some values that are missing e.g. CC quarter 1 Deceased
         # I think we've had problems when trying to sample from this kind of thing before
@@ -682,9 +814,20 @@ class DistributionFitUtils():
         # all_combinations = pd.DataFrame(list(itertools.product(hems_results, outcomes, vehicle_categories, callsign_group_categories, quarters)),
         #                             columns=['hems_result', 'pt_outcome', 'vehicle_type', 'callsign_group', 'quarter'])
 
-        hr_cat_counts = hr_df.groupby(['hems_result', 'pt_outcome',
-                                       'vehicle_type', 'callsign_group',
-                                       'quarter', 'time_of_day']).size().reset_index(name='count')
+        hr_cat_counts = (
+            hr_df.groupby(
+                [
+                    "hems_result",
+                    "pt_outcome",
+                    "vehicle_type",
+                    "callsign_group",
+                    "quarter",
+                    "time_of_day",
+                ]
+            )
+            .size()
+            .reset_index(name="count")
+        )
 
         # merged = pd.merge(all_combinations, hr_cat_counts,
         #               on=['hems_result', 'pt_outcome', 'vehicle_type', 'callsign_group', 'quarter'],
@@ -693,74 +836,105 @@ class DistributionFitUtils():
 
         merged = hr_cat_counts
 
-        total_counts = merged.groupby(['pt_outcome',
-                                       'vehicle_type', 'callsign_group',
-                                       'quarter', 'time_of_day'])['count'].transform('sum')
-        merged['proportion'] = round(merged['count'] / total_counts.replace(0, 1), 3)
+        total_counts = merged.groupby(
+            ["pt_outcome", "vehicle_type", "callsign_group", "quarter", "time_of_day"]
+        )["count"].transform("sum")
+        merged["proportion"] = round(merged["count"] / total_counts.replace(0, 1), 3)
 
-        merged.to_csv('distribution_data/hems_results_by_patient_outcome_and_time_of_day_and_quarter_and_vehicle_type_and_callsign_group_probs.csv', mode = "w+", index = False)
-
-
+        merged.to_csv(
+            "distribution_data/hems_results_by_patient_outcome_and_time_of_day_and_quarter_and_vehicle_type_and_callsign_group_probs.csv",
+            mode="w+",
+            index=False,
+        )
 
     def hourly_arrival_by_qtr_probs(self):
         """
 
-            Calculates the proportions of calls arriving in any given hour
-            stratified by yearly quarter
+        Calculates the proportions of calls arriving in any given hour
+        stratified by yearly quarter
 
         """
 
-        ia_df = self.df[['quarter', 'hour']].dropna()
+        ia_df = self.df[["quarter", "hour"]].dropna()
 
-        hourly_counts = ia_df.groupby(['hour', 'quarter']).size().reset_index(name='count')
-        total_counts = hourly_counts.groupby(['quarter'])['count'].transform('sum')
-        hourly_counts['proportion'] = round(hourly_counts['count'] / total_counts, 4)
+        hourly_counts = (
+            ia_df.groupby(["hour", "quarter"]).size().reset_index(name="count")
+        )
+        total_counts = hourly_counts.groupby(["quarter"])["count"].transform("sum")
+        hourly_counts["proportion"] = round(hourly_counts["count"] / total_counts, 4)
 
-        hourly_counts.sort_values(by=['quarter', 'hour']).to_csv('distribution_data/hourly_arrival_by_qtr_probs.csv', mode="w+")
-
+        hourly_counts.sort_values(by=["quarter", "hour"]).to_csv(
+            "distribution_data/hourly_arrival_by_qtr_probs.csv", mode="w+"
+        )
 
     def callsign_group_by_ampds_card_and_hour_probs(self):
         """
 
-            Calculates the probabilty of a specific callsign being allocated to
-            a call based on the AMPDS card category and hour of day
+        Calculates the probabilty of a specific callsign being allocated to
+        a call based on the AMPDS card category and hour of day
 
         """
-        callsign_counts = self.df.groupby(['ampds_card', 'hour', 'callsign_group']).size().reset_index(name='count')
+        callsign_counts = (
+            self.df.groupby(["ampds_card", "hour", "callsign_group"])
+            .size()
+            .reset_index(name="count")
+        )
 
-        total_counts = callsign_counts.groupby(['ampds_card', 'hour'])['count'].transform('sum')
-        callsign_counts['proportion'] = round(callsign_counts['count'] / total_counts, 4)
+        total_counts = callsign_counts.groupby(["ampds_card", "hour"])[
+            "count"
+        ].transform("sum")
+        callsign_counts["proportion"] = round(
+            callsign_counts["count"] / total_counts, 4
+        )
 
-        callsign_counts.to_csv('distribution_data/callsign_group_by_ampds_card_and_hour_probs.csv', mode = "w+", index=False)
+        callsign_counts.to_csv(
+            "distribution_data/callsign_group_by_ampds_card_and_hour_probs.csv",
+            mode="w+",
+            index=False,
+        )
 
     def callsign_group_by_ampds_card_probs(self):
         """
 
-            Calculates the probabilty of a specific callsign being allocated to
-            a call based on the AMPDS card category
+        Calculates the probabilty of a specific callsign being allocated to
+        a call based on the AMPDS card category
 
         """
 
-        callsign_df = self.df[self.df['callsign_group'] != 'Other']
+        callsign_df = self.df[self.df["callsign_group"] != "Other"]
 
-        callsign_counts = callsign_df.groupby(['ampds_card', 'callsign_group']).size().reset_index(name='count')
+        callsign_counts = (
+            callsign_df.groupby(["ampds_card", "callsign_group"])
+            .size()
+            .reset_index(name="count")
+        )
 
-        total_counts = callsign_counts.groupby(['ampds_card'])['count'].transform('sum')
-        callsign_counts['proportion'] = round(callsign_counts['count'] / total_counts, 4)
+        total_counts = callsign_counts.groupby(["ampds_card"])["count"].transform("sum")
+        callsign_counts["proportion"] = round(
+            callsign_counts["count"] / total_counts, 4
+        )
 
-        callsign_counts.to_csv('distribution_data/callsign_group_by_ampds_card_probs.csv', mode = "w+", index=False)
+        callsign_counts.to_csv(
+            "distribution_data/callsign_group_by_ampds_card_probs.csv",
+            mode="w+",
+            index=False,
+        )
 
     def callsign_group(self):
         """
-            Calculates the probabilty of a specific callsign being allocated to
-            a call
+        Calculates the probabilty of a specific callsign being allocated to
+        a call
         """
         df = self.df.copy()
 
         # Convert time fields to numeric
         time_fields = [
-            "time_allocation", "time_mobile", "time_to_scene",
-            "time_on_scene", "time_to_hospital", "time_to_clear"
+            "time_allocation",
+            "time_mobile",
+            "time_to_scene",
+            "time_on_scene",
+            "time_to_hospital",
+            "time_to_clear",
         ]
         for col in time_fields:
             df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -770,7 +944,9 @@ class DistributionFitUtils():
 
         # Compute job start and end times
         df["start_time"] = df["inc_date"]
-        df["end_time"] = df["start_time"] + pd.to_timedelta(df["job_duration_min"], unit="m")
+        df["end_time"] = df["start_time"] + pd.to_timedelta(
+            df["job_duration_min"], unit="m"
+        )
 
         # Sort jobs by start time
         df = df.sort_values(by="start_time").reset_index(drop=True)
@@ -803,59 +979,70 @@ class DistributionFitUtils():
 
         # TODO: Ideally we'd also remove any instances where we know one of the helos to have been
         # off for servicing if that data is available
-        ad_hoc = pd.read_csv("external_data/ad_hoc.csv", parse_dates=["offline", "online"])
+        ad_hoc = pd.read_csv(
+            "external_data/ad_hoc.csv", parse_dates=["offline", "online"]
+        )
         ad_hoc["aircraft"] = ad_hoc["aircraft"].str.lower()
 
         data["inc_date"] = pd.to_datetime(data["inc_date"], format="ISO8601")
         data["vehicle"] = data["vehicle"].str.lower()
 
         # Create a cross-join between data and ad_hoc
-        data['key'] = 1
-        ad_hoc['key'] = 1
-        merged = data.merge(ad_hoc, on='key')
+        data["key"] = 1
+        ad_hoc["key"] = 1
+        merged = data.merge(ad_hoc, on="key")
 
         # Keep rows where inc_date falls within the offline period
-        overlap = merged[(merged['inc_date'] >= merged['offline']) & (merged['inc_date'] <= merged['online'])]
+        overlap = merged[
+            (merged["inc_date"] >= merged["offline"])
+            & (merged["inc_date"] <= merged["online"])
+        ]
 
         # Filter out those rows from the original data
-        df_no_overlap = data[~data['inc_date'].isin(overlap['inc_date'])].drop(columns='key')
-
-        callsign_df = (
-            df_no_overlap
-            .assign(
-                helicopter_benefit=np.select(
-                    [
-                        df_no_overlap["cc_benefit"] == "y",
-                        df_no_overlap["ec_benefit"] == "y",
-                        df_no_overlap["hems_result"].isin([
-                            "Stand Down En Route",
-                            "Landed but no patient contact",
-                            "Stand Down Before Mobile"
-                        ])
-                    ],
-                    ["y", "y", "n"],
-                    default=df_no_overlap["helicopter_benefit"]
-                ),
-                care_category=np.select(
-                    [
-                        df_no_overlap["cc_benefit"] == "y",
-                        df_no_overlap["ec_benefit"] == "y"
-                    ],
-                    ["CC", "EC"],
-                    default="REG"
-                )
-            )
+        df_no_overlap = data[~data["inc_date"].isin(overlap["inc_date"])].drop(
+            columns="key"
         )
 
-        callsign_df = callsign_df[callsign_df['callsign_group'] != 'Other']
+        callsign_df = df_no_overlap.assign(
+            helicopter_benefit=np.select(
+                [
+                    df_no_overlap["cc_benefit"] == "y",
+                    df_no_overlap["ec_benefit"] == "y",
+                    df_no_overlap["hems_result"].isin(
+                        [
+                            "Stand Down En Route",
+                            "Landed but no patient contact",
+                            "Stand Down Before Mobile",
+                        ]
+                    ),
+                ],
+                ["y", "y", "n"],
+                default=df_no_overlap["helicopter_benefit"],
+            ),
+            care_category=np.select(
+                [
+                    df_no_overlap["cc_benefit"] == "y",
+                    df_no_overlap["ec_benefit"] == "y",
+                ],
+                ["CC", "EC"],
+                default="REG",
+            ),
+        )
 
-        callsign_counts = callsign_df.groupby(['callsign_group']).size().reset_index(name='count')
+        callsign_df = callsign_df[callsign_df["callsign_group"] != "Other"]
+
+        callsign_counts = (
+            callsign_df.groupby(["callsign_group"]).size().reset_index(name="count")
+        )
 
         total_counts = len(callsign_df)
-        callsign_counts['proportion'] = round(callsign_counts['count'] / total_counts, 4)
+        callsign_counts["proportion"] = round(
+            callsign_counts["count"] / total_counts, 4
+        )
 
-        callsign_counts.to_csv('distribution_data/callsign_group_probs.csv', mode = "w+", index=False)
-
+        callsign_counts.to_csv(
+            "distribution_data/callsign_group_probs.csv", mode="w+", index=False
+        )
 
     # def callsign_group_by_care_category(self):
     #     """
@@ -905,7 +1092,6 @@ class DistributionFitUtils():
     #     # Filter out overlapping jobs
     #     df_no_overlap = df[~df["overlaps"]]
 
-
     #     callsign_df = (
     #         df_no_overlap
     #         .assign(
@@ -942,7 +1128,7 @@ class DistributionFitUtils():
 
     #     callsign_counts.to_csv('distribution_data/callsign_group_by_care_category_probs.csv', mode = "w+", index=False)
 
-    #========== ARCHIVED CODE ============ #
+    # ========== ARCHIVED CODE ============ #
     # def vehicle_type_by_month_probs(self):
     #     """
 
@@ -956,14 +1142,14 @@ class DistributionFitUtils():
     #     callsign_counts['proportion'] = round(callsign_counts['count'] / total_counts, 4)
 
     #     callsign_counts.to_csv('distribution_data/vehicle_type_by_month_probs.csv', mode = "w+")
-    #========== END ARCHIVED CODE ============ #
+    # ========== END ARCHIVED CODE ============ #
     def vehicle_type_by_quarter_probs(self):
         """
 
-            Calculates the probabilty of a car/helicopter being allocated to
-            a call based on the callsign group and quarter of the year
+        Calculates the probabilty of a car/helicopter being allocated to
+        a call based on the callsign group and quarter of the year
 
-            Quarter accounts for seasonal variation without being as affected by
+        Quarter accounts for seasonal variation without being as affected by
 
         """
         data = self.df.copy()
@@ -973,73 +1159,115 @@ class DistributionFitUtils():
 
         # TODO: Ideally we'd also remove any instances where we know one of the helos to have been
         # off for servicing if that data is available
-        ad_hoc = pd.read_csv("external_data/ad_hoc.csv", parse_dates=["offline", "online"])
+        ad_hoc = pd.read_csv(
+            "external_data/ad_hoc.csv", parse_dates=["offline", "online"]
+        )
         ad_hoc["aircraft"] = ad_hoc["aircraft"].str.lower()
 
         data["inc_date"] = pd.to_datetime(data["inc_date"], format="ISO8601")
         data["vehicle"] = data["vehicle"].str.lower()
 
         # Create a cross-join between data and ad_hoc
-        data['key'] = 1
-        ad_hoc['key'] = 1
-        merged = data.merge(ad_hoc, on='key')
+        data["key"] = 1
+        ad_hoc["key"] = 1
+        merged = data.merge(ad_hoc, on="key")
 
         # Keep rows where inc_date falls within the offline period
-        overlap = merged[(merged['inc_date'] >= merged['offline']) & (merged['inc_date'] <= merged['online'])]
+        overlap = merged[
+            (merged["inc_date"] >= merged["offline"])
+            & (merged["inc_date"] <= merged["online"])
+        ]
 
         # Filter out those rows from the original data
-        filtered_data = data[~data['inc_date'].isin(overlap['inc_date'])].drop(columns='key')
+        filtered_data = data[~data["inc_date"].isin(overlap["inc_date"])].drop(
+            columns="key"
+        )
 
         # First, calculate overall props
-        callsign_counts = filtered_data.groupby(['callsign_group', 'vehicle_type']).size().reset_index(name='count')
+        callsign_counts = (
+            filtered_data.groupby(["callsign_group", "vehicle_type"])
+            .size()
+            .reset_index(name="count")
+        )
 
-        total_counts = callsign_counts.groupby(['callsign_group'])['count'].transform('sum')
-        callsign_counts['proportion'] = round(callsign_counts['count'] / total_counts, 4)
+        total_counts = callsign_counts.groupby(["callsign_group"])["count"].transform(
+            "sum"
+        )
+        callsign_counts["proportion"] = round(
+            callsign_counts["count"] / total_counts, 4
+        )
 
-        callsign_counts.to_csv('distribution_data/vehicle_type_probs.csv', mode = "w+")
+        callsign_counts.to_csv("distribution_data/vehicle_type_probs.csv", mode="w+")
 
         # Then, redo by quarter
-        callsign_counts = filtered_data.groupby(['callsign_group', 'quarter', 'vehicle_type']).size().reset_index(name='count')
+        callsign_counts = (
+            filtered_data.groupby(["callsign_group", "quarter", "vehicle_type"])
+            .size()
+            .reset_index(name="count")
+        )
 
-        total_counts = callsign_counts.groupby(['callsign_group', 'quarter'])['count'].transform('sum')
-        callsign_counts['proportion'] = round(callsign_counts['count'] / total_counts, 4)
+        total_counts = callsign_counts.groupby(["callsign_group", "quarter"])[
+            "count"
+        ].transform("sum")
+        callsign_counts["proportion"] = round(
+            callsign_counts["count"] / total_counts, 4
+        )
 
-        callsign_counts.to_csv('distribution_data/vehicle_type_by_quarter_probs.csv', mode = "w+")
+        callsign_counts.to_csv(
+            "distribution_data/vehicle_type_by_quarter_probs.csv", mode="w+"
+        )
 
     def vehicle_type_probs(self):
         """
 
-            Calculates the probabilty of a car/helicopter being allocated to
-            a call based on the callsign group
+        Calculates the probabilty of a car/helicopter being allocated to
+        a call based on the callsign group
 
         """
 
-        callsign_counts = self.df.groupby(['callsign_group', 'vehicle_type']).size().reset_index(name='count')
+        callsign_counts = (
+            self.df.groupby(["callsign_group", "vehicle_type"])
+            .size()
+            .reset_index(name="count")
+        )
 
-        total_counts = callsign_counts.groupby(['callsign_group'])['count'].transform('sum')
-        callsign_counts['proportion'] = round(callsign_counts['count'] / total_counts, 4)
+        total_counts = callsign_counts.groupby(["callsign_group"])["count"].transform(
+            "sum"
+        )
+        callsign_counts["proportion"] = round(
+            callsign_counts["count"] / total_counts, 4
+        )
 
-        callsign_counts.to_csv('distribution_data/vehicle_type_probs.csv', mode = "w+")
+        callsign_counts.to_csv("distribution_data/vehicle_type_probs.csv", mode="w+")
 
     def hems_result_by_callsign_group_and_vehicle_type_probs(self):
         """
 
-            Calculates the probabilty of a specific HEMS result being allocated to
-            a call based on the callsign group and hour of day
+        Calculates the probabilty of a specific HEMS result being allocated to
+        a call based on the callsign group and hour of day
 
-            TODO: These probability calculation functions could probably be refactored into a single
-            function and just specify columns and output name
+        TODO: These probability calculation functions could probably be refactored into a single
+        function and just specify columns and output name
 
         """
-        hems_counts = self.df.groupby(['hems_result', 'callsign_group', 'vehicle_type']).size().reset_index(name='count')
+        hems_counts = (
+            self.df.groupby(["hems_result", "callsign_group", "vehicle_type"])
+            .size()
+            .reset_index(name="count")
+        )
 
-        total_counts = hems_counts.groupby(['callsign_group', 'vehicle_type'])['count'].transform('sum')
-        hems_counts['proportion'] = round(hems_counts['count'] / total_counts, 4)
+        total_counts = hems_counts.groupby(["callsign_group", "vehicle_type"])[
+            "count"
+        ].transform("sum")
+        hems_counts["proportion"] = round(hems_counts["count"] / total_counts, 4)
 
-        hems_counts.to_csv('distribution_data/hems_result_by_callsign_group_and_vehicle_type_probs.csv', mode = "w+", index=False)
+        hems_counts.to_csv(
+            "distribution_data/hems_result_by_callsign_group_and_vehicle_type_probs.csv",
+            mode="w+",
+            index=False,
+        )
 
-
-    #========== ARCHIVED CODE ============ #
+    # ========== ARCHIVED CODE ============ #
     # def hems_result_by_care_cat_and_helicopter_benefit_probs(self):
     #     """
 
@@ -1083,9 +1311,9 @@ class DistributionFitUtils():
     #     hems_counts['proportion'] = round(hems_counts['count'] / hems_counts['total'], 4)
 
     #     hems_counts.to_csv('distribution_data/hems_result_by_care_cat_and_helicopter_benefit_probs.csv', mode = "w+", index=False)
-    #========== END ARCHIVED CODE ============ #
+    # ========== END ARCHIVED CODE ============ #
 
-    #========== ARCHIVED CODE ============ #
+    # ========== ARCHIVED CODE ============ #
     # def pt_outcome_by_hems_result_and_care_category_probs(self):
     #     """
 
@@ -1126,23 +1354,25 @@ class DistributionFitUtils():
     #     po_counts['proportion'] = round(po_counts['count'] / po_counts['total'], 4)
 
     #     po_counts.to_csv('distribution_data/pt_outcome_by_hems_result_and_care_category_probs.csv', mode = "w+")
-    #========== END ARCHIVED CODE ============ #
+    # ========== END ARCHIVED CODE ============ #
 
     def school_holidays(self) -> None:
-        """"
-            Function to generate a CSV file containing schoole holiday
-            start and end dates for a given year. The Year range is determined
-            by the submitted data (plus a year at the end of the study for good measure)
+        """ "
+        Function to generate a CSV file containing schoole holiday
+        start and end dates for a given year. The Year range is determined
+        by the submitted data (plus a year at the end of the study for good measure)
         """
 
         min_date = self.df.inc_date.min()
-        max_date = self.df.inc_date.max() + timedelta(weeks = (52 * self.school_holidays_years))
+        max_date = self.df.inc_date.max() + timedelta(
+            weeks=(52 * self.school_holidays_years)
+        )
 
         u = Utils()
 
         years_of_holidays_list = u.years_between(min_date, max_date)
 
-        sh = pd.DataFrame(columns=['year', 'start_date', 'end_date'])
+        sh = pd.DataFrame(columns=["year", "start_date", "end_date"])
 
         for i, year in enumerate(years_of_holidays_list):
             tmp = u.calculate_term_holidays(year)
@@ -1152,28 +1382,38 @@ class DistributionFitUtils():
             else:
                 sh = pd.concat([sh, tmp])
 
-        sh.to_csv('actual_data/school_holidays.csv', index = False)
+        sh.to_csv("actual_data/school_holidays.csv", index=False)
 
-
-# These functions are to wrangle historical data to provide comparison against the simulation outputs
+    # These functions are to wrangle historical data to provide comparison against the simulation outputs
 
     def historical_jobs_per_day_per_callsign(self):
         df = self.df
 
         df["date"] = pd.to_datetime(df["inc_date"]).dt.date
-        all_counts_hist = df.groupby(["date", "callsign"])["job_id"].count().reset_index()
-        all_counts_hist.rename(columns={'job_id':'jobs_in_day'}, inplace=True)
+        all_counts_hist = (
+            df.groupby(["date", "callsign"])["job_id"].count().reset_index()
+        )
+        all_counts_hist.rename(columns={"job_id": "jobs_in_day"}, inplace=True)
 
         all_combinations = pd.DataFrame(
-            list(itertools.product(df['date'].unique(), df['callsign'].unique())),
-            columns=['date', 'callsign']
+            list(itertools.product(df["date"].unique(), df["callsign"].unique())),
+            columns=["date", "callsign"],
         ).dropna()
 
-        merged = all_combinations.merge(all_counts_hist, on=['date', 'callsign'], how='left')
-        merged['jobs_in_day'] = merged['jobs_in_day'].fillna(0).astype(int)
+        merged = all_combinations.merge(
+            all_counts_hist, on=["date", "callsign"], how="left"
+        )
+        merged["jobs_in_day"] = merged["jobs_in_day"].fillna(0).astype(int)
 
-        all_counts = merged.groupby(['callsign', 'jobs_in_day']).count().reset_index().rename(columns={"date":"count"})
-        all_counts.to_csv("historical_data/historical_jobs_per_day_per_callsign.csv", index=False)
+        all_counts = (
+            merged.groupby(["callsign", "jobs_in_day"])
+            .count()
+            .reset_index()
+            .rename(columns={"date": "count"})
+        )
+        all_counts.to_csv(
+            "historical_data/historical_jobs_per_day_per_callsign.csv", index=False
+        )
 
     def historical_care_cat_counts(self):
         """
@@ -1195,340 +1435,511 @@ class DistributionFitUtils():
 
         df_historical = self.df
 
-        df_historical['inc_date'] = pd.to_datetime(df_historical['inc_date'])
+        df_historical["inc_date"] = pd.to_datetime(df_historical["inc_date"])
         # Extract the first day of the month and the hour of each incident
-        df_historical['month_start'] = df_historical.inc_date.dt.strftime("%Y-%m-01")
-        df_historical['hour'] = df_historical.inc_date.dt.hour
+        df_historical["month_start"] = df_historical.inc_date.dt.strftime("%Y-%m-01")
+        df_historical["hour"] = df_historical.inc_date.dt.hour
 
         conditions = [
-            df_historical['cc_benefit'] == 'y',
-            df_historical['ec_benefit'] == 'y',
-            df_historical['helicopter_benefit'] == 'y',
-            df_historical['callsign_group'] == 'Other'
+            df_historical["cc_benefit"] == "y",
+            df_historical["ec_benefit"] == "y",
+            df_historical["helicopter_benefit"] == "y",
+            df_historical["callsign_group"] == "Other",
         ]
 
         choices = [
-            'CC',
-            'EC',
-            'REG - helicopter benefit',
-            'Unknown - DAA resource did not attend'
+            "CC",
+            "EC",
+            "REG - helicopter benefit",
+            "Unknown - DAA resource did not attend",
         ]
         # Assign care category to each record
         # If the case did not meet any of the criteria in 'conditions', it will default
         # to being labelled as a 'regular/REG' case (i.e there was no benefit recorded)
-        df_historical['care_category'] = np.select(conditions, choices, default='REG')
+        df_historical["care_category"] = np.select(conditions, choices, default="REG")
 
         # Count occurrences grouped by hour and care category
-        historical_value_counts_by_hour = (
-            df_historical.value_counts(["hour", "care_category"])
-            .reset_index(name="count")
-            )
+        historical_value_counts_by_hour = df_historical.value_counts(
+            ["hour", "care_category"]
+        ).reset_index(name="count")
         # Output to CSV for use in tests and visualisations
-        (historical_value_counts_by_hour
-         .sort_values(['hour', 'care_category'])
-         .to_csv("historical_data/historical_care_cat_counts.csv"))
+        (
+            historical_value_counts_by_hour.sort_values(
+                ["hour", "care_category"]
+            ).to_csv("historical_data/historical_care_cat_counts.csv")
+        )
 
         # Also output the % of regular (not cc/ec) jobs with a helicopter benefit
         # These are the regular jobs we will make an assumption follow different logic due to having an obvious expected
         # patient benefit of having a helicopter allocated to them that we will have to assume is apparent at the time
         # of the call being placed (such as the casualty being located in a remote location, or )
 
-        numerator = (historical_value_counts_by_hour[
-            historical_value_counts_by_hour["care_category"] == "REG - helicopter benefit"
-            ]["count"].sum())
+        numerator = historical_value_counts_by_hour[
+            historical_value_counts_by_hour["care_category"]
+            == "REG - helicopter benefit"
+        ]["count"].sum()
 
-        denominator = (historical_value_counts_by_hour[
-            (historical_value_counts_by_hour["care_category"] == "REG - helicopter benefit") |
-            (historical_value_counts_by_hour["care_category"] == "REG")
-            ]["count"].sum())
-
-        with open('distribution_data/proportion_jobs_heli_benefit.txt', 'w+') as heli_benefit_file:
-            heli_benefit_file.write(json.dumps((numerator/denominator).round(4)))
-
-         # Count occurrences grouped by hour and care category
-        historical_value_counts_by_hour_cc_ec = (
-            df_historical.value_counts(["hour", "care_category", "helicopter_benefit"])
-            .reset_index(name="count")
+        denominator = historical_value_counts_by_hour[
+            (
+                historical_value_counts_by_hour["care_category"]
+                == "REG - helicopter benefit"
             )
+            | (historical_value_counts_by_hour["care_category"] == "REG")
+        ]["count"].sum()
 
-       # Output to CSV for use in tests and visualisations
+        with open(
+            "distribution_data/proportion_jobs_heli_benefit.txt", "w+"
+        ) as heli_benefit_file:
+            heli_benefit_file.write(json.dumps((numerator / denominator).round(4)))
+
+        # Count occurrences grouped by hour and care category
+        historical_value_counts_by_hour_cc_ec = df_historical.value_counts(
+            ["hour", "care_category", "helicopter_benefit"]
+        ).reset_index(name="count")
+
+        # Output to CSV for use in tests and visualisations
         # (historical_value_counts_by_hour_cc_ec
         #  .sort_values(["hour", "care_category", "helicopter_benefit"])
         #  .to_csv("historical_data/historical_care_cat_counts_cc_ec.csv"))
 
+        numerator_cc = historical_value_counts_by_hour_cc_ec[
+            (historical_value_counts_by_hour_cc_ec["care_category"] == "CC")
+            & (historical_value_counts_by_hour_cc_ec["helicopter_benefit"] == "y")
+        ]["count"].sum()
 
-        numerator_cc = (
-            historical_value_counts_by_hour_cc_ec[
-                (historical_value_counts_by_hour_cc_ec["care_category"] == "CC") &
-                (historical_value_counts_by_hour_cc_ec["helicopter_benefit"] == "y")
-                ]["count"].sum())
+        denominator_cc = historical_value_counts_by_hour_cc_ec[
+            (historical_value_counts_by_hour_cc_ec["care_category"] == "CC")
+        ]["count"].sum()
 
-        denominator_cc = (
-            historical_value_counts_by_hour_cc_ec[
-                (historical_value_counts_by_hour_cc_ec["care_category"] == "CC")
-                ]["count"].sum())
+        with open(
+            "distribution_data/proportion_jobs_heli_benefit_cc.txt", "w+"
+        ) as heli_benefit_file:
+            heli_benefit_file.write(
+                json.dumps((numerator_cc / denominator_cc).round(4))
+            )
 
-        with open('distribution_data/proportion_jobs_heli_benefit_cc.txt', 'w+') as heli_benefit_file:
-            heli_benefit_file.write(json.dumps((numerator_cc/denominator_cc).round(4)))
+        numerator_ec = historical_value_counts_by_hour_cc_ec[
+            (historical_value_counts_by_hour_cc_ec["care_category"] == "EC")
+            & (historical_value_counts_by_hour_cc_ec["helicopter_benefit"] == "y")
+        ]["count"].sum()
 
-        numerator_ec = (
-            historical_value_counts_by_hour_cc_ec[
-                (historical_value_counts_by_hour_cc_ec["care_category"] == "EC") &
-                (historical_value_counts_by_hour_cc_ec["helicopter_benefit"] == "y")
-                ]["count"].sum())
+        denominator_ec = historical_value_counts_by_hour_cc_ec[
+            (historical_value_counts_by_hour_cc_ec["care_category"] == "EC")
+        ]["count"].sum()
 
-        denominator_ec = (
-            historical_value_counts_by_hour_cc_ec[
-                (historical_value_counts_by_hour_cc_ec["care_category"] == "EC")
-                ]["count"].sum())
-
-        with open('distribution_data/proportion_jobs_heli_benefit_ec.txt', 'w+') as heli_benefit_file:
-            heli_benefit_file.write(json.dumps((numerator_ec/denominator_ec).round(4)))
-
-
+        with open(
+            "distribution_data/proportion_jobs_heli_benefit_ec.txt", "w+"
+        ) as heli_benefit_file:
+            heli_benefit_file.write(
+                json.dumps((numerator_ec / denominator_ec).round(4))
+            )
 
     def historical_monthly_totals(self):
         """
-            Calculates monthly incident totals from provided dataset of historical data
+        Calculates monthly incident totals from provided dataset of historical data
         """
 
         # Multiple resources can be sent to the same job.
-        monthly_df = self.df[['inc_date', 'first_day_of_month', 'hems_result', 'vehicle_type']]\
-            .drop_duplicates(subset="inc_date", keep="first")
+        monthly_df = self.df[
+            ["inc_date", "first_day_of_month", "hems_result", "vehicle_type"]
+        ].drop_duplicates(subset="inc_date", keep="first")
 
-        is_stand_down = monthly_df['hems_result'].str.contains("Stand Down")
-        monthly_df['stand_down_car'] = ((monthly_df['vehicle_type'] == "car") & is_stand_down).astype(int)
-        monthly_df['stand_down_helicopter'] = ((monthly_df['vehicle_type'] == "helicopter") & is_stand_down).astype(int)
+        is_stand_down = monthly_df["hems_result"].str.contains("Stand Down")
+        monthly_df["stand_down_car"] = (
+            (monthly_df["vehicle_type"] == "car") & is_stand_down
+        ).astype(int)
+        monthly_df["stand_down_helicopter"] = (
+            (monthly_df["vehicle_type"] == "helicopter") & is_stand_down
+        ).astype(int)
 
-        monthly_totals_df = monthly_df.groupby('first_day_of_month').agg(
-                                stand_down_car=('stand_down_car', 'sum'),
-                                stand_down_helicopter=('stand_down_helicopter', 'sum'),
-                                total_jobs=('vehicle_type', 'size')
-                            ).reset_index()
+        monthly_totals_df = (
+            monthly_df.groupby("first_day_of_month")
+            .agg(
+                stand_down_car=("stand_down_car", "sum"),
+                stand_down_helicopter=("stand_down_helicopter", "sum"),
+                total_jobs=("vehicle_type", "size"),
+            )
+            .reset_index()
+        )
 
-        monthly_totals_df.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_jobs_per_month.csv', mode="w+", index=False)
+        monthly_totals_df.rename(columns={"first_day_of_month": "month"}).to_csv(
+            "historical_data/historical_jobs_per_month.csv", mode="w+", index=False
+        )
 
     def historical_monthly_totals_all_calls(self):
         """
-            Calculates monthly incident totals from provided dataset of historical data stratified by callsign
+        Calculates monthly incident totals from provided dataset of historical data stratified by callsign
         """
 
         # Multiple resources can be sent to the same job.
-        monthly_df = self.df[['inc_date', 'first_day_of_month']].dropna()
+        monthly_df = self.df[["inc_date", "first_day_of_month"]].dropna()
 
-        monthly_totals_df = monthly_df.groupby(['first_day_of_month']).count().reset_index()
+        monthly_totals_df = (
+            monthly_df.groupby(["first_day_of_month"]).count().reset_index()
+        )
 
-        monthly_totals_df.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_monthly_totals_all_calls.csv', mode="w+", index=False)
+        monthly_totals_df.rename(columns={"first_day_of_month": "month"}).to_csv(
+            "historical_data/historical_monthly_totals_all_calls.csv",
+            mode="w+",
+            index=False,
+        )
 
     def historical_monthly_totals_by_callsign(self):
         """
-            Calculates monthly incident totals from provided dataset of historical data stratified by callsign
+        Calculates monthly incident totals from provided dataset of historical data stratified by callsign
         """
 
         # Multiple resources can be sent to the same job.
-        monthly_df = self.df[['inc_date', 'first_day_of_month', 'callsign']].dropna()
+        monthly_df = self.df[["inc_date", "first_day_of_month", "callsign"]].dropna()
 
-        monthly_totals_df = monthly_df.groupby(['first_day_of_month', 'callsign']).count().reset_index()
+        monthly_totals_df = (
+            monthly_df.groupby(["first_day_of_month", "callsign"]).count().reset_index()
+        )
 
-        #print(monthly_totals_df.head())
+        # print(monthly_totals_df.head())
 
-        monthly_totals_pivot_df = monthly_totals_df.pivot(index='first_day_of_month', columns='callsign', values='inc_date').fillna(0).reset_index().rename_axis(None, axis=1)
+        monthly_totals_pivot_df = (
+            monthly_totals_df.pivot(
+                index="first_day_of_month", columns="callsign", values="inc_date"
+            )
+            .fillna(0)
+            .reset_index()
+            .rename_axis(None, axis=1)
+        )
 
-        #print(monthly_totals_pivot_df.head())
+        # print(monthly_totals_pivot_df.head())
 
-        monthly_totals_pivot_df.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_monthly_totals_by_callsign.csv', mode="w+", index=False)
+        monthly_totals_pivot_df.rename(columns={"first_day_of_month": "month"}).to_csv(
+            "historical_data/historical_monthly_totals_by_callsign.csv",
+            mode="w+",
+            index=False,
+        )
 
     def historical_monthly_totals_by_hour_of_day(self):
         """
-            Calculates monthly incident totals from provided dataset of historical data stratified by hour of the day
+        Calculates monthly incident totals from provided dataset of historical data stratified by hour of the day
         """
 
         # Multiple resources can be sent to the same job.
-        monthly_df = self.df[['inc_date', 'first_day_of_month', 'hour']].dropna()\
+        monthly_df = (
+            self.df[["inc_date", "first_day_of_month", "hour"]]
+            .dropna()
             .drop_duplicates(subset="inc_date", keep="first")
+        )
 
-        monthly_totals_df = monthly_df.groupby(['first_day_of_month', 'hour']).count().reset_index()
+        monthly_totals_df = (
+            monthly_df.groupby(["first_day_of_month", "hour"]).count().reset_index()
+        )
 
-        #print(monthly_totals_df.head())
+        # print(monthly_totals_df.head())
 
-        monthly_totals_pivot_df = monthly_totals_df.pivot(index='first_day_of_month', columns='hour', values='inc_date').fillna(0).reset_index().rename_axis(None, axis=1)
+        monthly_totals_pivot_df = (
+            monthly_totals_df.pivot(
+                index="first_day_of_month", columns="hour", values="inc_date"
+            )
+            .fillna(0)
+            .reset_index()
+            .rename_axis(None, axis=1)
+        )
 
-        #print(monthly_totals_pivot_df.head())
+        # print(monthly_totals_pivot_df.head())
 
-        monthly_totals_pivot_df.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_monthly_totals_by_hour_of_day.csv', mode="w+", index=False)
+        monthly_totals_pivot_df.rename(columns={"first_day_of_month": "month"}).to_csv(
+            "historical_data/historical_monthly_totals_by_hour_of_day.csv",
+            mode="w+",
+            index=False,
+        )
 
     def historical_monthly_totals_by_day_of_week(self):
         """
-            Calculates number of incidents per month stratified by day of the week
+        Calculates number of incidents per month stratified by day of the week
         """
 
         # Multiple resources can be sent to the same job.
-        monthly_df = self.df[['inc_date', 'first_day_of_month', 'day_of_week']].dropna()\
+        monthly_df = (
+            self.df[["inc_date", "first_day_of_month", "day_of_week"]]
+            .dropna()
             .drop_duplicates(subset="inc_date", keep="first")
+        )
 
-        monthly_totals_df = monthly_df.groupby(['first_day_of_month', 'day_of_week']).count().reset_index()
+        monthly_totals_df = (
+            monthly_df.groupby(["first_day_of_month", "day_of_week"])
+            .count()
+            .reset_index()
+        )
 
-        #print(monthly_totals_df.head())
+        # print(monthly_totals_df.head())
 
-        monthly_totals_pivot_df = monthly_totals_df.pivot(index='first_day_of_month', columns='day_of_week', values='inc_date').fillna(0).reset_index().rename_axis(None, axis=1)
+        monthly_totals_pivot_df = (
+            monthly_totals_df.pivot(
+                index="first_day_of_month", columns="day_of_week", values="inc_date"
+            )
+            .fillna(0)
+            .reset_index()
+            .rename_axis(None, axis=1)
+        )
 
-        #print(monthly_totals_pivot_df.head())
+        # print(monthly_totals_pivot_df.head())
 
-        monthly_totals_pivot_df.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_monthly_totals_by_day_of_week.csv', mode="w+", index=False)
+        monthly_totals_pivot_df.rename(columns={"first_day_of_month": "month"}).to_csv(
+            "historical_data/historical_monthly_totals_by_day_of_week.csv",
+            mode="w+",
+            index=False,
+        )
 
     def historical_median_time_of_activities_by_month_and_resource_type(self):
         """
-            Calculate the median time for each of the job cycle phases stratified by month and vehicle type
+        Calculate the median time for each of the job cycle phases stratified by month and vehicle type
         """
 
-        median_df = self.df[['first_day_of_month', 'time_allocation',
-                             'time_mobile', 'time_to_scene', 'time_on_scene',
-                             'time_to_hospital', 'time_to_clear', 'vehicle_type']].copy()
+        median_df = self.df[
+            [
+                "first_day_of_month",
+                "time_allocation",
+                "time_mobile",
+                "time_to_scene",
+                "time_on_scene",
+                "time_to_hospital",
+                "time_to_clear",
+                "vehicle_type",
+            ]
+        ].copy()
 
-        median_df['total_job_time'] = median_df[[
-            'time_allocation', 'time_mobile', 'time_to_scene', 'time_on_scene',
-            'time_to_hospital', 'time_to_clear']].sum(axis=1, skipna=True)
+        median_df["total_job_time"] = median_df[
+            [
+                "time_allocation",
+                "time_mobile",
+                "time_to_scene",
+                "time_on_scene",
+                "time_to_hospital",
+                "time_to_clear",
+            ]
+        ].sum(axis=1, skipna=True)
 
         # Replacing zeros with NaN to exclude from median calculation
         # since if an HEMS result is Stood down en route, then time_on_scene would be zero and affect the median
         # median_df.replace(0, np.nan, inplace=True)
 
         # Grouping by month and resource_type, calculating medians
-        median_times = median_df.groupby(['first_day_of_month', 'vehicle_type']).median(numeric_only=True).reset_index()
+        median_times = (
+            median_df.groupby(["first_day_of_month", "vehicle_type"])
+            .median(numeric_only=True)
+            .reset_index()
+        )
 
         pivot_data = median_times.pivot_table(
-            index='first_day_of_month',
-            columns='vehicle_type',
-            values=['time_allocation', 'time_mobile', 'time_to_scene',
-                    'time_on_scene', 'time_to_hospital', 'time_to_clear', 'total_job_time']
+            index="first_day_of_month",
+            columns="vehicle_type",
+            values=[
+                "time_allocation",
+                "time_mobile",
+                "time_to_scene",
+                "time_on_scene",
+                "time_to_hospital",
+                "time_to_clear",
+                "total_job_time",
+            ],
         )
 
         pivot_data.columns = [f"median_{col[1]}_{col[0]}" for col in pivot_data.columns]
         pivot_data = pivot_data.reset_index()
 
-        pivot_data.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_median_time_of_activities_by_month_and_resource_type.csv', mode="w+", index=False)
+        pivot_data.rename(columns={"first_day_of_month": "month"}).to_csv(
+            "historical_data/historical_median_time_of_activities_by_month_and_resource_type.csv",
+            mode="w+",
+            index=False,
+        )
 
     def historical_monthly_resource_utilisation(self):
         """
-            Calculates number of, and time spent on, incidents per month stratified by callsign
+        Calculates number of, and time spent on, incidents per month stratified by callsign
         """
 
         # Multiple resources can be sent to the same job.
-        monthly_df = self.df[[
-            'inc_date', 'first_day_of_month', 'callsign', 'time_allocation',
-            'time_mobile', 'time_to_scene', 'time_on_scene', 'time_to_hospital',
-            'time_to_clear']].copy()
+        monthly_df = self.df[
+            [
+                "inc_date",
+                "first_day_of_month",
+                "callsign",
+                "time_allocation",
+                "time_mobile",
+                "time_to_scene",
+                "time_on_scene",
+                "time_to_hospital",
+                "time_to_clear",
+            ]
+        ].copy()
 
-        monthly_df['total_time'] = monthly_df.filter(regex=r'^time_').sum(axis=1)
+        monthly_df["total_time"] = monthly_df.filter(regex=r"^time_").sum(axis=1)
 
-        monthly_totals_df = monthly_df.groupby(['callsign', 'first_day_of_month'], as_index=False)\
-            .agg(n = ('callsign', 'size'), total_time = ('total_time', 'sum'))
+        monthly_totals_df = monthly_df.groupby(
+            ["callsign", "first_day_of_month"], as_index=False
+        ).agg(n=("callsign", "size"), total_time=("total_time", "sum"))
 
-        monthly_totals_pivot_df = monthly_totals_df.pivot(index='first_day_of_month', columns='callsign', values=['n', 'total_time'])
+        monthly_totals_pivot_df = monthly_totals_df.pivot(
+            index="first_day_of_month", columns="callsign", values=["n", "total_time"]
+        )
 
-        monthly_totals_pivot_df.columns = [f"{col[0]}_{col[1]}" for col in  monthly_totals_pivot_df.columns]
+        monthly_totals_pivot_df.columns = [
+            f"{col[0]}_{col[1]}" for col in monthly_totals_pivot_df.columns
+        ]
         monthly_totals_pivot_df = monthly_totals_pivot_df.reset_index()
 
-        monthly_totals_pivot_df.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_monthly_resource_utilisation.csv', mode="w+", index=False)
+        monthly_totals_pivot_df.rename(columns={"first_day_of_month": "month"}).to_csv(
+            "historical_data/historical_monthly_resource_utilisation.csv",
+            mode="w+",
+            index=False,
+        )
 
     def historical_daily_calls_breakdown(self):
-
         df = self.df
         # Convert inc_date to date only (remove time)
-        df['date'] = pd.to_datetime(df['inc_date']).dt.date
+        df["date"] = pd.to_datetime(df["inc_date"]).dt.date
 
         # Count number of calls per day
-        calls_in_day_breakdown = df.groupby('date').size().reset_index(name='calls_in_day')
+        calls_in_day_breakdown = (
+            df.groupby("date").size().reset_index(name="calls_in_day")
+        )
 
         # Save the daily call counts with a 'day' index column
         calls_in_day_breakdown_with_day = calls_in_day_breakdown.copy()
-        calls_in_day_breakdown_with_day.insert(0, 'day', range(1, len(calls_in_day_breakdown) + 1))
-        calls_in_day_breakdown_with_day.drop(columns='date').to_csv('historical_data/historical_daily_calls_breakdown.csv', index=False)
+        calls_in_day_breakdown_with_day.insert(
+            0, "day", range(1, len(calls_in_day_breakdown) + 1)
+        )
+        calls_in_day_breakdown_with_day.drop(columns="date").to_csv(
+            "historical_data/historical_daily_calls_breakdown.csv", index=False
+        )
 
         # Count how many days had the same number of calls
-        calls_per_day_summary = calls_in_day_breakdown['calls_in_day'].value_counts().reset_index()
-        calls_per_day_summary.columns = ['calls_in_day', 'days']
-        calls_per_day_summary.to_csv('historical_data/historical_daily_calls.csv', index=False)
+        calls_per_day_summary = (
+            calls_in_day_breakdown["calls_in_day"].value_counts().reset_index()
+        )
+        calls_per_day_summary.columns = ["calls_in_day", "days"]
+        calls_per_day_summary.to_csv(
+            "historical_data/historical_daily_calls.csv", index=False
+        )
 
     def historical_missed_jobs(self):
         df = self.df
         df["date"] = pd.to_datetime(df["inc_date"])
         df["hour"] = df["date"].dt.hour
         df["month_start"] = df["date"].dt.strftime("%Y-%m-01")
-        df["callsign_group_simplified"] = df["callsign_group"].apply(lambda x: "No HEMS available" if x=="Other" else "HEMS (helo or car) available and sent")
+        df["callsign_group_simplified"] = df["callsign_group"].apply(
+            lambda x: "No HEMS available"
+            if x == "Other"
+            else "HEMS (helo or car) available and sent"
+        )
         df["quarter"] = df["inc_date"].dt.quarter
 
         # By month
-        count_df_month = df[["callsign_group_simplified", "month_start"]].value_counts().reset_index(name="count").sort_values(['callsign_group_simplified','month_start'])
-        count_df_month.to_csv("historical_data/historical_missed_calls_by_month.csv", index=False)
+        count_df_month = (
+            df[["callsign_group_simplified", "month_start"]]
+            .value_counts()
+            .reset_index(name="count")
+            .sort_values(["callsign_group_simplified", "month_start"])
+        )
+        count_df_month.to_csv(
+            "historical_data/historical_missed_calls_by_month.csv", index=False
+        )
 
         # By hour
-        count_df = df[["callsign_group_simplified", "hour"]].value_counts().reset_index(name="count").sort_values(['callsign_group_simplified','hour'])
-        count_df.to_csv("historical_data/historical_missed_calls_by_hour.csv", index=False)
+        count_df = (
+            df[["callsign_group_simplified", "hour"]]
+            .value_counts()
+            .reset_index(name="count")
+            .sort_values(["callsign_group_simplified", "hour"])
+        )
+        count_df.to_csv(
+            "historical_data/historical_missed_calls_by_hour.csv", index=False
+        )
 
         # By quarter and hour
-        count_df_quarter = df[["callsign_group_simplified", "quarter", "hour"]].value_counts().reset_index(name="count").sort_values(['quarter','callsign_group_simplified','hour'])
-        count_df_quarter.to_csv("historical_data/historical_missed_calls_by_quarter_and_hour.csv", index=False)
+        count_df_quarter = (
+            df[["callsign_group_simplified", "quarter", "hour"]]
+            .value_counts()
+            .reset_index(name="count")
+            .sort_values(["quarter", "callsign_group_simplified", "hour"])
+        )
+        count_df_quarter.to_csv(
+            "historical_data/historical_missed_calls_by_quarter_and_hour.csv",
+            index=False,
+        )
 
     def upper_allowable_time_bounds(self):
         """
-            Calculates the maximum permissable time for each phase on an incident based on supplied historical data.
-            This is currently set to 1.5x the upper quartile of the data distribution
+        Calculates the maximum permissable time for each phase on an incident based on supplied historical data.
+        This is currently set to 1.5x the upper quartile of the data distribution
         """
 
-        median_df = self.df[[
-            'time_allocation', 'time_mobile', 'time_to_scene', 'time_on_scene',
-            'time_to_hospital', 'time_to_clear', 'vehicle_type']]
+        median_df = self.df[
+            [
+                "time_allocation",
+                "time_mobile",
+                "time_to_scene",
+                "time_on_scene",
+                "time_to_hospital",
+                "time_to_clear",
+                "vehicle_type",
+            ]
+        ]
 
         # Replacing zeros with NaN to exclude from median calculation
         # since if an HEMS result is Stood down en route, then time_on_scene
         # would be zero and affect the median
         median_df.replace(0, np.nan, inplace=True)
 
-        print(median_df.quantile(.75))
+        print(median_df.quantile(0.75))
         # pivot_data.rename(columns={'first_day_of_month': 'month'}).to_csv('historical_data/historical_median_time_of_activities_by_month_and_resource_type.csv', mode="w+", index=False)
 
     def historical_job_durations_breakdown(self):
-
         df = self.df
 
         cols = [
-            'callsign', 'vehicle_type',
-            'time_allocation', 'time_mobile',
-            'time_to_scene', 'time_on_scene',
-            'time_to_hospital', 'time_to_clear'
+            "callsign",
+            "vehicle_type",
+            "time_allocation",
+            "time_mobile",
+            "time_to_scene",
+            "time_on_scene",
+            "time_to_hospital",
+            "time_to_clear",
         ]
         df2 = df[cols].copy()
 
         # 2. Add a 1-based row identifier
-        df2['job_identifier'] = range(1, len(df2) + 1)
+        df2["job_identifier"] = range(1, len(df2) + 1)
 
         # 3. Compute total_duration as the row-wise sum of the time columns
         time_cols = [
-            'time_allocation', 'time_mobile',
-            'time_to_scene', 'time_on_scene',
-            'time_to_hospital', 'time_to_clear'
+            "time_allocation",
+            "time_mobile",
+            "time_to_scene",
+            "time_on_scene",
+            "time_to_hospital",
+            "time_to_clear",
         ]
-        df2['total_duration'] = df2[time_cols].sum(axis=1, skipna=True)
+        df2["total_duration"] = df2[time_cols].sum(axis=1, skipna=True)
 
-        #print(df2.head())
+        # print(df2.head())
 
         # 4. Pivot (melt) to long format
         df_long = df2.melt(
-            id_vars=['job_identifier', 'callsign', 'vehicle_type'],
-            value_vars=time_cols + ['total_duration'],
-            var_name='name',
-            value_name='value'
+            id_vars=["job_identifier", "callsign", "vehicle_type"],
+            value_vars=time_cols + ["total_duration"],
+            var_name="name",
+            value_name="value",
         )
 
-        #print(df_long[df_long.job_identifier == 1])
+        # print(df_long[df_long.job_identifier == 1])
 
         # 5. Drop any rows where callsign or vehicle_type is missing
-        df_long = df_long.dropna(subset=['callsign', 'vehicle_type'])
+        df_long = df_long.dropna(subset=["callsign", "vehicle_type"])
         df_long_sorted = df_long.sort_values("job_identifier").reset_index(drop=True)
 
         # 6. Write out to CSV
-        df_long_sorted.to_csv("historical_data/historical_job_durations_breakdown.csv", index=False)
+        df_long_sorted.to_csv(
+            "historical_data/historical_job_durations_breakdown.csv", index=False
+        )
 
     # ========== ARCHIVED CODE - v1 of calcualte_availability_row ======================== #
     # def calculate_availability_row(self, row, rota_df, callsign_lookup_df, period_start, period_end):
@@ -1634,7 +2045,6 @@ class DistributionFitUtils():
     #         'reason': reason,
     #         'proportion': proportion
     #     }
-
 
     # ============= ARCHIVED CODE - v2 of calculate_availability_row ======================= #
     # def calculate_availability_row(self, row, rota_df, callsign_lookup_df):
@@ -1892,8 +2302,10 @@ class DistributionFitUtils():
             None (saves results to CSV file)
         """
         # Load and prepare ad-hoc downtime data
-        adhoc_df = pd.read_csv('external_data/ad_hoc.csv', parse_dates=['offline', 'online'])
-        adhoc_df = adhoc_df[['aircraft', 'offline', 'online', 'reason']]
+        adhoc_df = pd.read_csv(
+            "external_data/ad_hoc.csv", parse_dates=["offline", "online"]
+        )
+        adhoc_df = adhoc_df[["aircraft", "offline", "online", "reason"]]
         # Load rota and callsign lookup data
         rota_df = pd.read_csv("actual_data/HEMS_ROTA.csv")
         callsign_lookup_df = pd.read_csv("actual_data/callsign_registration_lookup.csv")
@@ -1903,14 +2315,14 @@ class DistributionFitUtils():
 
         # Define the hour bands mapping
         HOUR_BANDS = {
-            '00-05': (0, 6),   # 00:00 to 05:59
-            '06-11': (6, 12),  # 06:00 to 11:59
-            '12-17': (12, 18), # 12:00 to 17:59
-            '18-23': (18, 24)  # 18:00 to 23:59
+            "00-05": (0, 6),  # 00:00 to 05:59
+            "06-11": (6, 12),  # 06:00 to 11:59
+            "12-17": (12, 18),  # 12:00 to 17:59
+            "18-23": (18, 24),  # 18:00 to 23:59
         }
 
         # Create list of 6-hour bins
-        bins = ['00-05', '06-11', '12-17', '18-23']
+        bins = ["00-05", "06-11", "12-17", "18-23"]
 
         def is_summer(date_obj, summer_start_month=4, summer_end_month=9):
             """
@@ -1922,7 +2334,9 @@ class DistributionFitUtils():
             Returns:
                 bool: True if date is in summer months
             """
-            return date_obj.month in [i for i in range(summer_start_month, summer_end_month+1)]
+            return date_obj.month in [
+                i for i in range(summer_start_month, summer_end_month + 1)
+            ]
 
         def check_month_is_summer(month, summer_start_month=4, summer_end_month=9):
             """
@@ -1934,7 +2348,11 @@ class DistributionFitUtils():
             Returns:
                 str: 'summer' is in summer months, 'winter' if in winter months
             """
-            return 'summer' if month in [i for i in range(summer_start_month, summer_end_month+1)] else 'winter'
+            return (
+                "summer"
+                if month in [i for i in range(summer_start_month, summer_end_month + 1)]
+                else "winter"
+            )
 
         def get_band_for_hour(hour):
             """
@@ -1973,17 +2391,14 @@ class DistributionFitUtils():
             return 0
 
         # Create date range for analysis period
-        date_range = pd.date_range(start=period_start,
-                            end=period_end,
-                            freq='D')
-        daily_df = pd.DataFrame({'date': date_range})
-        daily_df['date'] = pd.to_datetime(daily_df['date'])
+        date_range = pd.date_range(start=period_start, end=period_end, freq="D")
+        daily_df = pd.DataFrame({"date": date_range})
+        daily_df["date"] = pd.to_datetime(daily_df["date"])
 
-    # Create MultiIndex from date and bins combinations to get all date/time combinations
+        # Create MultiIndex from date and bins combinations to get all date/time combinations
         multi_index = pd.MultiIndex.from_product(
-            [daily_df['date'], bins],
-            names=['date', 'six_hour_bin']
-            )
+            [daily_df["date"], bins], names=["date", "six_hour_bin"]
+        )
 
         # Convert MultiIndex to DataFrame and reset index
         daily_df = multi_index.to_frame(index=False).reset_index(drop=True)
@@ -1992,27 +2407,31 @@ class DistributionFitUtils():
 
         # Initialize availability columns for each aircraft registration
         # Each column will store minutes of scheduled time per time band
-        for registration in full_rota_df['registration'].unique():
-            daily_df[registration] = 0 # Initialize with 0 minutes
+        for registration in full_rota_df["registration"].unique():
+            daily_df[registration] = 0  # Initialize with 0 minutes
 
         # Calculate scheduled availability for each date/time band combination
         for _, row in daily_df.iterrows():
-            current_date = row['date']
-            current_band = row['six_hour_bin']
+            current_date = row["date"]
+            current_band = row["six_hour_bin"]
             band_start, band_end = HOUR_BANDS[current_band]
 
             is_current_date_summer = is_summer(current_date)
 
             # Get the row index for updating the dataframe
-            row_idx = daily_df[(daily_df['date'] == current_date) &
-                            (daily_df['six_hour_bin'] == current_band)].index[0]
+            row_idx = daily_df[
+                (daily_df["date"] == current_date)
+                & (daily_df["six_hour_bin"] == current_band)
+            ].index[0]
 
             # Iterate through each resource's rota entry
             for _, rota_entry in full_rota_df.iterrows():
-                registration = rota_entry['registration']
+                registration = rota_entry["registration"]
                 # Select appropriate start/end times based on season
-                start_hour_col = 'summer_start' if is_current_date_summer else 'winter_start'
-                end_hour_col = 'summer_end' if is_current_date_summer else 'winter_end'
+                start_hour_col = (
+                    "summer_start" if is_current_date_summer else "winter_start"
+                )
+                end_hour_col = "summer_end" if is_current_date_summer else "winter_end"
                 start_hour = rota_entry[start_hour_col]
                 end_hour = rota_entry[end_hour_col]
 
@@ -2035,9 +2454,12 @@ class DistributionFitUtils():
                     # Part 2: Tomorrow from midnight to end_hour
                     # Need to check if this band is for tomorrow
                     tomorrow = current_date + pd.Timedelta(days=1)
-                    tomorrow_rows = daily_df[daily_df['date'] == tomorrow]
+                    tomorrow_rows = daily_df[daily_df["date"] == tomorrow]
 
-                    if not tomorrow_rows.empty and current_band in tomorrow_rows['six_hour_bin'].values:
+                    if (
+                        not tomorrow_rows.empty
+                        and current_band in tomorrow_rows["six_hour_bin"].values
+                    ):
                         total_minutes_for_band += calculate_minutes_in_band(
                             0, end_hour, band_start, band_end
                         )
@@ -2047,10 +2469,15 @@ class DistributionFitUtils():
 
         # Aggregate scheduled availability by quarter, time band, and registration
         available_time = (
-            daily_df.melt(id_vars=["date", "six_hour_bin", "quarter"], value_name="rota_time", var_name="registration")
-            .groupby(["quarter", "six_hour_bin", "registration"])[["rota_time"]]
-            .sum().reset_index()
+            daily_df.melt(
+                id_vars=["date", "six_hour_bin", "quarter"],
+                value_name="rota_time",
+                var_name="registration",
             )
+            .groupby(["quarter", "six_hour_bin", "registration"])[["rota_time"]]
+            .sum()
+            .reset_index()
+        )
 
         def calculate_availability_row(row, rota_df, callsign_lookup_df):
             """
@@ -2065,51 +2492,53 @@ class DistributionFitUtils():
                 dict: Dictionary containing processed availability data
             """
             # Extract downtime information
-            registration = row['aircraft'].lower()
-            downtime_start = pd.to_datetime(row['offline'], utc=True)
-            downtime_end = pd.to_datetime(row['online'], utc=True)
-            reason = row.get('reason', None)
+            registration = row["aircraft"].lower()
+            downtime_start = pd.to_datetime(row["offline"], utc=True)
+            downtime_end = pd.to_datetime(row["online"], utc=True)
+            reason = row.get("reason", None)
 
             # Determine which 6-hour bin this downtime starts in
             hour = downtime_start.hour
             if 0 <= hour <= 5:
-                six_hour_bin = '00-05'
+                six_hour_bin = "00-05"
             elif 6 <= hour <= 11:
-                six_hour_bin = '06-11'
+                six_hour_bin = "06-11"
             elif 12 <= hour <= 17:
-                six_hour_bin = '12-17'
+                six_hour_bin = "12-17"
             else:
-                six_hour_bin = '18-23'
+                six_hour_bin = "18-23"
 
             quarter = downtime_start.quarter
 
             # Find the callsign for this registration
-            match = callsign_lookup_df[callsign_lookup_df['registration'].str.lower() == registration]
+            match = callsign_lookup_df[
+                callsign_lookup_df["registration"].str.lower() == registration
+            ]
 
             # No matching callsign found
             if match.empty:
                 return {
-                    'registration': registration,
-                    'offline': downtime_start,
-                    'online': downtime_end,
-                    'six_hour_bin': six_hour_bin,
-                    'quarter': quarter,
-                    'total_offline': None,
-                    'reason': reason
+                    "registration": registration,
+                    "offline": downtime_start,
+                    "online": downtime_end,
+                    "six_hour_bin": six_hour_bin,
+                    "quarter": quarter,
+                    "total_offline": None,
+                    "reason": reason,
                 }
 
-            callsign = match.iloc[0]['callsign']
+            callsign = match.iloc[0]["callsign"]
             # Find rota entries for this callsign
-            rota_rows = rota_df[rota_df['callsign'] == callsign]
+            rota_rows = rota_df[rota_df["callsign"] == callsign]
             if rota_rows.empty:
                 return {
-                    'registration': registration,
-                    'offline': downtime_start,
-                    'online': downtime_end,
-                    'six_hour_bin': six_hour_bin,
-                    'quarter': quarter,
-                    'total_offline': None,
-                    'reason': reason
+                    "registration": registration,
+                    "offline": downtime_start,
+                    "online": downtime_end,
+                    "six_hour_bin": six_hour_bin,
+                    "quarter": quarter,
+                    "total_offline": None,
+                    "reason": reason,
                 }
 
             # Determine season for appropriate rota times
@@ -2120,15 +2549,16 @@ class DistributionFitUtils():
 
             # Calculate overlap between downtime and scheduled rota times
             for _, rota in rota_rows.iterrows():
-                start_hour = rota[f'{season}_start']
-                end_hour = rota[f'{season}_end']
+                start_hour = rota[f"{season}_start"]
+                end_hour = rota[f"{season}_end"]
 
                 # Check overlap across multiple days (yesterday, today, tomorrow)
                 # This handles shifts that span midnight
-                for base_day in [downtime_start.normalize() - timedelta(days=1),
-                                downtime_start.normalize(),
-                                downtime_start.normalize() + timedelta(days=1)]:
-
+                for base_day in [
+                    downtime_start.normalize() - timedelta(days=1),
+                    downtime_start.normalize(),
+                    downtime_start.normalize() + timedelta(days=1),
+                ]:
                     rota_start = base_day + timedelta(hours=start_hour)
                     rota_end = base_day + timedelta(hours=end_hour)
 
@@ -2140,117 +2570,138 @@ class DistributionFitUtils():
                     overlap_end = min(downtime_end, rota_end)
 
                     if overlap_end > overlap_start:
-                        overlap_minutes = (overlap_end - overlap_start).total_seconds() / 60
+                        overlap_minutes = (
+                            overlap_end - overlap_start
+                        ).total_seconds() / 60
 
                         total_overlap_minutes += overlap_minutes
 
             return {
-                'registration': registration,
-                'offline': downtime_start,
-                'online': downtime_end,
-                'six_hour_bin': six_hour_bin,
-                'quarter': quarter,
-                'total_offline': total_overlap_minutes,
-                'reason': reason
+                "registration": registration,
+                "offline": downtime_start,
+                "online": downtime_end,
+                "six_hour_bin": six_hour_bin,
+                "quarter": quarter,
+                "total_offline": total_overlap_minutes,
+                "reason": reason,
             }
 
         # Process all ad-hoc downtime events
         results = adhoc_df.apply(
-                        lambda row: calculate_availability_row(
-                            row, rota_df, callsign_lookup_df),
-                        axis=1
-                    )
+            lambda row: calculate_availability_row(row, rota_df, callsign_lookup_df),
+            axis=1,
+        )
 
         # Convert results to DataFrame and select relevant columns
-        unavailability_minutes_df = (
-            pd.DataFrame(results.tolist())
-            [["registration", "six_hour_bin", "quarter", "total_offline", "reason"]]
-            )
+        unavailability_minutes_df = pd.DataFrame(results.tolist())[
+            ["registration", "six_hour_bin", "quarter", "total_offline", "reason"]
+        ]
 
         # Aggregate offline time by registration, time band, quarter, and reason
-        offline_durations = unavailability_minutes_df.groupby(
-            ["registration", "six_hour_bin", "quarter", "reason"]
-            )[["total_offline"]].sum().reset_index()
+        offline_durations = (
+            unavailability_minutes_df.groupby(
+                ["registration", "six_hour_bin", "quarter", "reason"]
+            )[["total_offline"]]
+            .sum()
+            .reset_index()
+        )
 
         # Create complete combinations to ensure all possible categories are represented
         # This prevents missing data issues in the final output
-        registrations = offline_durations['registration'].unique()
-        six_hour_bins = offline_durations['six_hour_bin'].unique()
-        quarters = offline_durations['quarter'].unique()
-        reasons = offline_durations['reason'].unique()
+        registrations = offline_durations["registration"].unique()
+        six_hour_bins = offline_durations["six_hour_bin"].unique()
+        quarters = offline_durations["quarter"].unique()
+        reasons = offline_durations["reason"].unique()
 
         # Generate all possible combinations
-        all_combinations = list(itertools.product(registrations, six_hour_bins, quarters, reasons))
+        all_combinations = list(
+            itertools.product(registrations, six_hour_bins, quarters, reasons)
+        )
 
         # Create complete dataframe with all combinations
         complete_df = pd.DataFrame(
             all_combinations,
-            columns=['registration', 'six_hour_bin', 'quarter', 'reason']
-            )
+            columns=["registration", "six_hour_bin", "quarter", "reason"],
+        )
 
         # Merge with original data to preserve existing values, fill missing with 0
         offline_durations = complete_df.merge(
             offline_durations,
-            on=['registration', 'six_hour_bin', 'quarter', 'reason'],
-            how='left'
-            )
+            on=["registration", "six_hour_bin", "quarter", "reason"],
+            how="left",
+        )
 
         # Fill NaN values with 0 (no downtime for those combinations)
-        offline_durations['total_offline'] = offline_durations['total_offline'].fillna(0.0)
+        offline_durations["total_offline"] = offline_durations["total_offline"].fillna(
+            0.0
+        )
 
         # Sort for better readability
         offline_durations = offline_durations.sort_values(
-            ['registration', 'six_hour_bin', 'quarter', 'reason']
-            ).reset_index(drop=True)
+            ["registration", "six_hour_bin", "quarter", "reason"]
+        ).reset_index(drop=True)
 
         # Ensure consistent case for registration names
         available_time["registration"] = available_time["registration"].str.lower()
-        offline_durations["registration"] = offline_durations["registration"].str.lower()
+        offline_durations["registration"] = offline_durations[
+            "registration"
+        ].str.lower()
 
         # Merge scheduled time with downtime data
-        ad_hoc = available_time.merge(offline_durations, on=["registration", "quarter", "six_hour_bin"])
+        ad_hoc = available_time.merge(
+            offline_durations, on=["registration", "quarter", "six_hour_bin"]
+        )
         ad_hoc["probability"] = ad_hoc["total_offline"] / ad_hoc["rota_time"]
 
         # Calculate availability probability (1 - sum of all unavailability probabilities)
-        available_prop_df = ad_hoc.groupby(
-            ["quarter", "six_hour_bin", "registration", "rota_time"]
-            )[["probability"]].sum().reset_index()
+        available_prop_df = (
+            ad_hoc.groupby(["quarter", "six_hour_bin", "registration", "rota_time"])[
+                ["probability"]
+            ]
+            .sum()
+            .reset_index()
+        )
 
         available_prop_df["reason"] = "available"
         available_prop_df["probability"] = 1 - available_prop_df["probability"]
 
         # Combine unavailability and availability data
-        final_ad_hoc_df = (
-            pd.concat([ad_hoc, available_prop_df])
-            .sort_values(["quarter", "six_hour_bin", "registration", "reason"])
-            )
+        final_ad_hoc_df = pd.concat([ad_hoc, available_prop_df]).sort_values(
+            ["quarter", "six_hour_bin", "registration", "reason"]
+        )
 
         # Handle cases where there's no scheduled time (set probability to NaN)
         final_ad_hoc_df["probability"] = final_ad_hoc_df.apply(
-            lambda x: np.nan if x["rota_time"]==0 else x["probability"],
-            axis=1
-            )
+            lambda x: np.nan if x["rota_time"] == 0 else x["probability"], axis=1
+        )
 
         final_ad_hoc_df["probability"] = final_ad_hoc_df["probability"].round(5)
 
         # Save results to CSV
-        final_ad_hoc_df[["registration", "six_hour_bin", "quarter", "reason", "probability"]].to_csv(
-            "distribution_data/ad_hoc_unavailability.csv", index=False
-            )
-
+        final_ad_hoc_df[
+            ["registration", "six_hour_bin", "quarter", "reason", "probability"]
+        ].to_csv("distribution_data/ad_hoc_unavailability.csv", index=False)
 
     def run_sim_on_historical_params(self):
         # Ensure all rotas are using default values
         rota = pd.read_csv("tests/rotas_historic/HISTORIC_HEMS_ROTA.csv")
         rota.to_csv("actual_data/HEMS_ROTA.csv", index=False)
 
-        callsign_reg_lookup = pd.read_csv("tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv")
-        callsign_reg_lookup.to_csv("actual_data/callsign_registration_lookup.csv", index=False)
+        callsign_reg_lookup = pd.read_csv(
+            "tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv"
+        )
+        callsign_reg_lookup.to_csv(
+            "actual_data/callsign_registration_lookup.csv", index=False
+        )
 
-        service_history = pd.read_csv("tests/rotas_historic/HISTORIC_service_history.csv")
+        service_history = pd.read_csv(
+            "tests/rotas_historic/HISTORIC_service_history.csv"
+        )
         service_history.to_csv("actual_data/service_history.csv", index=False)
 
-        service_sched = pd.read_csv("tests/rotas_historic/HISTORIC_service_schedules_by_model.csv")
+        service_sched = pd.read_csv(
+            "tests/rotas_historic/HISTORIC_service_schedules_by_model.csv"
+        )
         service_sched.to_csv("actual_data/service_schedules_by_model.csv", index=False)
 
         print("Generating simulation results...")
@@ -2264,9 +2715,11 @@ class DistributionFitUtils():
             total_runs=total_runs,
             sim_duration=sim_duration,
             warm_up_time=0,
-            sim_start_date=datetime.strptime("2023-01-01 05:00:00", "%Y-%m-%d %H:%M:%S"),
+            sim_start_date=datetime.strptime(
+                "2023-01-01 05:00:00", "%Y-%m-%d %H:%M:%S"
+            ),
             amb_data=False,
-            print_debug_messages=True
+            print_debug_messages=True,
         )
 
         collateRunResults()
@@ -2276,19 +2729,42 @@ class DistributionFitUtils():
             # results_all_runs.to_csv("historical_data/calculated/SIM_hist_params.csv", index=False)
 
             # save data of counts of suboptimal care category sent
-            counts_df = results_all_runs[results_all_runs["event_type"]=="resource_use"][["run_number", 'hems_res_category', "care_cat"]].value_counts().reset_index()
+            counts_df = (
+                results_all_runs[results_all_runs["event_type"] == "resource_use"][
+                    ["run_number", "hems_res_category", "care_cat"]
+                ]
+                .value_counts()
+                .reset_index()
+            )
 
-            counts_df_summary = counts_df.groupby(["hems_res_category", "care_cat"])["count"].agg(["mean", "min", "max"]).reset_index()
+            counts_df_summary = (
+                counts_df.groupby(["hems_res_category", "care_cat"])["count"]
+                .agg(["mean", "min", "max"])
+                .reset_index()
+            )
 
-            counts_df_summary.to_csv("historical_data/calculated/SIM_hist_params_suboptimal_care_cat_sent_summary.csv")
+            counts_df_summary.to_csv(
+                "historical_data/calculated/SIM_hist_params_suboptimal_care_cat_sent_summary.csv"
+            )
 
             # save data of counts of suboptimal vehicle type sent
-            counts_df = results_all_runs[results_all_runs["event_type"]=="resource_use"][["run_number", "vehicle_type", "heli_benefit"]].value_counts().reset_index()
+            counts_df = (
+                results_all_runs[results_all_runs["event_type"] == "resource_use"][
+                    ["run_number", "vehicle_type", "heli_benefit"]
+                ]
+                .value_counts()
+                .reset_index()
+            )
 
-            counts_df_summary = counts_df.groupby(["vehicle_type", "heli_benefit"])["count"].agg(["mean", "min", "max"]).reset_index()
+            counts_df_summary = (
+                counts_df.groupby(["vehicle_type", "heli_benefit"])["count"]
+                .agg(["mean", "min", "max"])
+                .reset_index()
+            )
 
-            counts_df_summary.to_csv("historical_data/calculated/SIM_hist_params_suboptimal_vehicle_type_sent_summary.csv")
-
+            counts_df_summary.to_csv(
+                "historical_data/calculated/SIM_hist_params_suboptimal_vehicle_type_sent_summary.csv"
+            )
 
             # # Also run the model to get some base-case outputs
             # resource_requests = (
@@ -2318,30 +2794,39 @@ class DistributionFitUtils():
             #     ).round(0)
 
             missed_jobs_care_cat_summary = _job_outcome_calculation.get_missed_call_df(
+                results_all_runs=results_all_runs,
+                run_length_days=float(sim_years * 365),
+                what="summary",
+            )
+
+            missed_jobs_care_cat_summary.to_csv(
+                "historical_data/calculated/SIM_hist_params_missed_jobs_care_cat_summary.csv"
+            )
+
+            missed_jobs_care_cat_breakdown = (
+                _job_outcome_calculation.get_missed_call_df(
                     results_all_runs=results_all_runs,
-                    run_length_days = float(sim_years*365),
-                    what="summary"
-                    )
+                    run_length_days=float(sim_years * 365),
+                    what="breakdown",
+                )
+            )
 
-            missed_jobs_care_cat_summary.to_csv("historical_data/calculated/SIM_hist_params_missed_jobs_care_cat_summary.csv")
-
-
-            missed_jobs_care_cat_breakdown = _job_outcome_calculation.get_missed_call_df(
-                    results_all_runs=results_all_runs,
-                    run_length_days = float(sim_years*365),
-                    what="breakdown"
-                    )
-
-            missed_jobs_care_cat_breakdown.to_csv("historical_data/calculated/SIM_hist_params_missed_jobs_care_cat_breakdown.csv")
+            missed_jobs_care_cat_breakdown.to_csv(
+                "historical_data/calculated/SIM_hist_params_missed_jobs_care_cat_breakdown.csv"
+            )
 
         except FileNotFoundError:
             pass
 
+
 if __name__ == "__main__":
     from distribution_fit_utils import DistributionFitUtils
-    test = DistributionFitUtils('external_data/clean_daa_import_missing_2023_2024.csv',
-                                calculate_school_holidays=True)
-    #test = DistributionFitUtils('external_data/clean_daa_import.csv')
+
+    test = DistributionFitUtils(
+        "external_data/clean_daa_import_missing_2023_2024.csv",
+        calculate_school_holidays=True,
+    )
+    # test = DistributionFitUtils('external_data/clean_daa_import.csv')
     test.import_and_wrangle()
     test.run_sim_on_historical_params()
 

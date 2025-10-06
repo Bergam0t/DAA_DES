@@ -3,27 +3,36 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype
 from datetime import time, datetime
 import calendar
+
 # Workaround to deal with relative import issues
 # https://discuss.streamlit.io/t/importing-modules-in-pages/26853/2
 from pathlib import Path
 import sys
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from _state_control import setup_state, reset_to_defaults, DEFAULT_INPUTS
 
 st.set_page_config(layout="wide")
 
 with open("app/style.css") as css:
-    st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
+    st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
 setup_state()
 
 from streamlit_extras.stylable_container import stylable_container
 from utils import Utils
-from _app_utils import get_text, get_text_sheet, DAA_COLORSCHEME, MONTH_MAPPING, REVERSE_MONTH_MAPPING, get_rota_month_strings
+from _app_utils import (
+    get_text,
+    get_text_sheet,
+    DAA_COLORSCHEME,
+    MONTH_MAPPING,
+    REVERSE_MONTH_MAPPING,
+    get_rota_month_strings,
+)
 
 u = Utils()
 
-text_df=get_text_sheet("setup")
+text_df = get_text_sheet("setup")
 
 st.session_state["visited_setup_page"] = True
 
@@ -37,15 +46,18 @@ with col2:
 
 st.caption(get_text("page_description", text_df))
 
-st.button(get_text("reset_parameters_button", text_df),
-          type="primary",
-          on_click=reset_to_defaults,
-          icon=":material/history:")
+st.button(
+    get_text("reset_parameters_button", text_df),
+    type="primary",
+    on_click=reset_to_defaults,
+    icon=":material/history:",
+)
 st.caption(get_text("reset_parameters_warning", text_df))
 
 st.divider()
 
 st.header("HEMS Rota Builder")
+
 
 @st.fragment
 def rota_start_end_dates():
@@ -59,57 +71,81 @@ def rota_start_end_dates():
             list(MONTH_MAPPING.keys()),
             index=st.session_state.summer_start_month_index,
             key="key_summer_start_month_index",
-            on_change= lambda: setattr(st.session_state,
-                                       'summer_start_month_index',
-                                       # note index is 1 less than actual month due to zero indexing in python
-                                       MONTH_MAPPING[st.session_state.key_summer_start_month_index]-1),
-            )
+            on_change=lambda: setattr(
+                st.session_state,
+                "summer_start_month_index",
+                # note index is 1 less than actual month due to zero indexing in python
+                MONTH_MAPPING[st.session_state.key_summer_start_month_index] - 1,
+            ),
+        )
     with col_summer_end:
         end_month = st.selectbox(
             "Select **end** month (inclusive) for Summer Rota",
             list(MONTH_MAPPING.keys()),
             index=st.session_state.summer_end_month_index,
             key="key_summer_end_month_index",
-            on_change= lambda: setattr(st.session_state,
-                                       'summer_end_month_index',
-                                       # note index is 1 less than actual month due to zero indexing in python
-                                       MONTH_MAPPING[st.session_state.key_summer_end_month_index]-1),
+            on_change=lambda: setattr(
+                st.session_state,
+                "summer_end_month_index",
+                # note index is 1 less than actual month due to zero indexing in python
+                MONTH_MAPPING[st.session_state.key_summer_end_month_index] - 1,
+            ),
+        )
 
-            )
-
-        start_month_num, end_month_num, summer_start_date, summer_end_date, summer_end_day,  winter_start_date, winter_end_date, winter_end_day = get_rota_month_strings(start_month, end_month)
+        (
+            start_month_num,
+            end_month_num,
+            summer_start_date,
+            summer_end_date,
+            summer_end_day,
+            winter_start_date,
+            winter_end_date,
+            winter_end_day,
+        ) = get_rota_month_strings(start_month, end_month)
 
     if start_month_num <= end_month_num:
         # Output
-        st.write(f"☀️ Summer rota runs from {summer_start_date} to {summer_end_date} (inclusive)")
-        st.write(f"❄️ Winter rota runs from {winter_start_date} to {winter_end_date} (inclusive)")
+        st.write(
+            f"☀️ Summer rota runs from {summer_start_date} to {summer_end_date} (inclusive)"
+        )
+        st.write(
+            f"❄️ Winter rota runs from {winter_start_date} to {winter_end_date} (inclusive)"
+        )
 
-        pd.DataFrame([
-            {'what': 'summer_start_month', 'month': start_month_num},
-            {'what': 'summer_end_month', 'month': end_month_num},
-            {'what': 'summer_start_month_string', 'month': start_month},
-            {'what': 'summer_end_month_string', 'month': end_month}]
-            ).to_csv("actual_data/rota_start_end_months.csv", index=False)
+        pd.DataFrame(
+            [
+                {"what": "summer_start_month", "month": start_month_num},
+                {"what": "summer_end_month", "month": end_month_num},
+                {"what": "summer_start_month_string", "month": start_month},
+                {"what": "summer_end_month_string", "month": end_month},
+            ]
+        ).to_csv("actual_data/rota_start_end_months.csv", index=False)
     else:
         default_start_month = DEFAULT_INPUTS["summer_start_month_index"] + 1
         default_end_month = DEFAULT_INPUTS["summer_end_month_index"] + 1
         default_start_month_name = REVERSE_MONTH_MAPPING[default_start_month]
         default_end_month_name = REVERSE_MONTH_MAPPING[default_end_month]
 
-        default_summer_end_day = calendar.monthrange(2024, end_month_num)[1]  # Assume leap year for Feb
+        default_summer_end_day = calendar.monthrange(2024, end_month_num)[
+            1
+        ]  # Assume leap year for Feb
         default_summer_end_date = f"{default_summer_end_day}th {default_end_month_name}"
-        st.error(f"""End month must be later than start month. Using default summer start of 1st {default_start_month_name} and summer end of {default_summer_end_date}.""")
-        pd.DataFrame([
-            {'what': 'summer_start_month', 'month': default_start_month},
-            {'what': 'summer_end_month', 'month': default_end_month}]
-            ).to_csv("actual_data/rota_start_end_months.csv", index=False)
+        st.error(
+            f"""End month must be later than start month. Using default summer start of 1st {default_start_month_name} and summer end of {default_summer_end_date}."""
+        )
+        pd.DataFrame(
+            [
+                {"what": "summer_start_month", "month": default_start_month},
+                {"what": "summer_end_month", "month": default_end_month},
+            ]
+        ).to_csv("actual_data/rota_start_end_months.csv", index=False)
+
 
 rota_start_end_dates()
 
 
 @st.fragment
 def fleet_setup():
-
     st.markdown(f"""### {get_text("header_fleet_setup", text_df)}""")
 
     st.caption("""At present, the fleet cannot be expanded beyond what is currently
@@ -125,11 +161,13 @@ def fleet_setup():
             disabled=False,
             value=st.session_state.num_helicopters,
             help=get_text("help_helicopters", text_df),
-            on_change= lambda: setattr(st.session_state,
-                                       'num_helicopters',
-                                       st.session_state.key_num_helicopters),
-            key="key_num_helicopters"
-            )
+            on_change=lambda: setattr(
+                st.session_state,
+                "num_helicopters",
+                st.session_state.key_num_helicopters,
+            ),
+            key="key_num_helicopters",
+        )
 
     with col_2_fleet_setup:
         num_cars = st.number_input(
@@ -139,18 +177,20 @@ def fleet_setup():
             disabled=False,
             value=st.session_state.num_cars,
             help=get_text("help_cars", text_df),
-            on_change= lambda: setattr(st.session_state,
-                                       'num_cars',
-                                       st.session_state.key_num_cars),
-            key="key_num_cars"
-            )
+            on_change=lambda: setattr(
+                st.session_state, "num_cars", st.session_state.key_num_cars
+            ),
+            key="key_num_cars",
+        )
 
     # Pull in the callsign and model lookup
     # For each, we will pull through the edited dataframe and the default dataframe
     # This allows us to ensure we are able to add in information about any default resources
     # even if we have removed it from the saved non-default lookups
     callsign_lookup = pd.read_csv("actual_data/callsign_registration_lookup.csv")
-    callsign_lookup_default = pd.read_csv("actual_data/callsign_registration_lookup_DEFAULT.csv")
+    callsign_lookup_default = pd.read_csv(
+        "actual_data/callsign_registration_lookup_DEFAULT.csv"
+    )
     callsign_lookup_columns = callsign_lookup.columns
 
     models = pd.read_csv("actual_data/service_schedules_by_model.csv")
@@ -159,8 +199,10 @@ def fleet_setup():
 
     hems_rota_default = pd.read_csv("actual_data/HEMS_ROTA_DEFAULT.csv")
 
-    callsign_lookup = pd.concat([callsign_lookup, callsign_lookup_default]).reset_index(drop=True)
-    callsign_lookup = callsign_lookup.drop_duplicates(keep='first')
+    callsign_lookup = pd.concat([callsign_lookup, callsign_lookup_default]).reset_index(
+        drop=True
+    )
+    callsign_lookup = callsign_lookup.drop_duplicates(keep="first")
     print(callsign_lookup)
 
     models = pd.concat([models, models_default]).reset_index(drop=True)
@@ -170,20 +212,22 @@ def fleet_setup():
     )
     print(models)
 
-    potential_fleet = callsign_lookup.merge(
-        models, how="left", on=['model']
-        )
+    potential_fleet = callsign_lookup.merge(models, how="left", on=["model"])
 
-    potential_fleet["callsign_group"] = potential_fleet["callsign"].str.extract(r"(\d+)")
+    potential_fleet["callsign_group"] = potential_fleet["callsign"].str.extract(
+        r"(\d+)"
+    )
 
-    potential_fleet["callsign_count"] = (
-        potential_fleet.groupby('callsign_group')['callsign_group'].transform('count')
-        )
+    potential_fleet["callsign_count"] = potential_fleet.groupby("callsign_group")[
+        "callsign_group"
+    ].transform("count")
 
-    default_helos = potential_fleet[potential_fleet["vehicle_type"]=="helicopter"]
+    default_helos = potential_fleet[potential_fleet["vehicle_type"] == "helicopter"]
 
-    default_cars = potential_fleet[(potential_fleet["vehicle_type"]=="car") &
-                                (potential_fleet["callsign_count"] == 1)]
+    default_cars = potential_fleet[
+        (potential_fleet["vehicle_type"] == "car")
+        & (potential_fleet["callsign_count"] == 1)
+    ]
 
     default_helos = default_helos.head(num_helicopters)
     default_helos["has_car"] = True
@@ -191,7 +235,9 @@ def fleet_setup():
     default_cars = default_cars.head(num_cars)
 
     st.markdown("#### Define the Helicopters")
-    st.caption("Columns with the :material/edit_note: symbol can be edited by double clicking the relevant table cell.")
+    st.caption(
+        "Columns with the :material/edit_note: symbol can be edited by double clicking the relevant table cell."
+    )
 
     updated_helos_df = st.data_editor(
         default_helos,
@@ -223,87 +269,136 @@ def fleet_setup():
 
     st.markdown("#### Define the Backup Cars")
 
-    backup_cars = potential_fleet[(potential_fleet["vehicle_type"]=="car") &
-                                  (potential_fleet["callsign_count"] > 1) &
-                                  (potential_fleet["callsign_group"]).isin(updated_helos_df[updated_helos_df["has_car"]==True]["callsign_group"].unique())
-                                  ]
+    backup_cars = potential_fleet[
+        (potential_fleet["vehicle_type"] == "car")
+        & (potential_fleet["callsign_count"] > 1)
+        & (potential_fleet["callsign_group"]).isin(
+            updated_helos_df[updated_helos_df["has_car"] == True][
+                "callsign_group"
+            ].unique()
+        )
+    ]
 
     updated_backup_cars_df = st.data_editor(
         backup_cars,
         hide_index=True,
         key="backup_car_data_editor",
-        column_order=["callsign",
-                    #   "callsign_group",
-                      "registration", "model", #"service_schedule_months", "service_duration_weeks"
-                      ],
+        column_order=[
+            "callsign",
+            #   "callsign_group",
+            "registration",
+            "model",  # "service_schedule_months", "service_duration_weeks"
+        ],
         column_config={
-                        "registration": st.column_config.TextColumn(label="Registration", required=True),
-                        "callsign": st.column_config.TextColumn(label="Callsign", required=True),
-                        "callsign_group": st.column_config.TextColumn(label="Callsign", disabled=True),
-                        "model": st.column_config.SelectboxColumn(label="Model", options=potential_fleet[potential_fleet["vehicle_type"]=="car"]["model"].unique(), required=True),
-                        # "service_schedule_months": st.column_config.NumberColumn(label="Servicing Interval (Months)", disabled=True),
-                        # "service_duration_weeks": st.column_config.NumberColumn(label="Servicing Interval (Weeks)", disabled=True)
-                    },
+            "registration": st.column_config.TextColumn(
+                label="Registration", required=True
+            ),
+            "callsign": st.column_config.TextColumn(label="Callsign", required=True),
+            "callsign_group": st.column_config.TextColumn(
+                label="Callsign", disabled=True
+            ),
+            "model": st.column_config.SelectboxColumn(
+                label="Model",
+                options=potential_fleet[potential_fleet["vehicle_type"] == "car"][
+                    "model"
+                ].unique(),
+                required=True,
+            ),
+            # "service_schedule_months": st.column_config.NumberColumn(label="Servicing Interval (Months)", disabled=True),
+            # "service_duration_weeks": st.column_config.NumberColumn(label="Servicing Interval (Weeks)", disabled=True)
+        },
     )
 
     st.markdown("#### Define the Standalone Cars")
-    st.caption("Columns with the :material/edit_note: symbol can be edited by double clicking the relevant table cell.")
+    st.caption(
+        "Columns with the :material/edit_note: symbol can be edited by double clicking the relevant table cell."
+    )
 
     updated_cars_df = st.data_editor(
         default_cars,
         hide_index=True,
         key="standalone_car_data_editor",
-        column_order=["callsign",
-                    #   "callsign_group",
-                      "registration", "model",
-                    #   "service_schedule_months", "service_duration_weeks"
-                      ],
+        column_order=[
+            "callsign",
+            #   "callsign_group",
+            "registration",
+            "model",
+            #   "service_schedule_months", "service_duration_weeks"
+        ],
         column_config={
-                        "registration": st.column_config.TextColumn(label="Registration", required=True),
-                        "callsign": st.column_config.TextColumn(label="Callsign", required=True),
-                        # "callsign_group": st.column_config.TextColumn(label="Callsign", disabled=True),
-                        "model": st.column_config.SelectboxColumn(label="Model", options=potential_fleet[potential_fleet["vehicle_type"]=="car"]["model"].unique(), required=True),
-                        # "service_schedule_months": st.column_config.NumberColumn(label="Servicing Interval (Months)", disabled=True),
-                        # "service_duration_weeks": st.column_config.NumberColumn(label="Servicing Interval (Weeks)", disabled=True)
-                    },
-        )
+            "registration": st.column_config.TextColumn(
+                label="Registration", required=True
+            ),
+            "callsign": st.column_config.TextColumn(label="Callsign", required=True),
+            # "callsign_group": st.column_config.TextColumn(label="Callsign", disabled=True),
+            "model": st.column_config.SelectboxColumn(
+                label="Model",
+                options=potential_fleet[potential_fleet["vehicle_type"] == "car"][
+                    "model"
+                ].unique(),
+                required=True,
+            ),
+            # "service_schedule_months": st.column_config.NumberColumn(label="Servicing Interval (Months)", disabled=True),
+            # "service_duration_weeks": st.column_config.NumberColumn(label="Servicing Interval (Weeks)", disabled=True)
+        },
+    )
 
     final_df = pd.concat([updated_helos_df, updated_backup_cars_df, updated_cars_df])
 
-    final_df[callsign_lookup_columns].drop_duplicates().to_csv("actual_data/callsign_registration_lookup.csv", index=False)
+    final_df[callsign_lookup_columns].drop_duplicates().to_csv(
+        "actual_data/callsign_registration_lookup.csv", index=False
+    )
 
     # final_df[models_columns].drop_duplicates().to_csv("actual_data/service_schedules_by_model.csv", index=False)
 
     # hems_rota_default['callsign_group'] = hems_rota_default['callsign_group'].astype('str')
-    hems_rota = hems_rota_default[hems_rota_default["callsign"].isin(final_df.callsign.unique())]
+    hems_rota = hems_rota_default[
+        hems_rota_default["callsign"].isin(final_df.callsign.unique())
+    ]
     hems_rota.to_csv("actual_data/HEMS_ROTA.csv", index=False)
 
     with st.expander("Click here to view the final fleet dataframes"):
         st.markdown("### Callsign Lookup")
-        st.dataframe(final_df[callsign_lookup_columns].drop_duplicates(), hide_index=True)
+        st.dataframe(
+            final_df[callsign_lookup_columns].drop_duplicates(), hide_index=True
+        )
         st.markdown("### Vehicle Model Details")
-        st.dataframe(pd.read_csv("actual_data/service_schedules_by_model.csv"), hide_index=True)
+        st.dataframe(
+            pd.read_csv("actual_data/service_schedules_by_model.csv"), hide_index=True
+        )
 
     st.markdown("### Individual Rota Setup")
 
     # Load callsign registration (this should reflect the output of fleet_setup)
     try:
-        callsign_registration_lookup_df = pd.read_csv("actual_data/callsign_registration_lookup.csv")
+        callsign_registration_lookup_df = pd.read_csv(
+            "actual_data/callsign_registration_lookup.csv"
+        )
     except FileNotFoundError:
-        st.error("actual_data/callsign_registration_lookup.csv not found. Please run Fleet Setup first.")
+        st.error(
+            "actual_data/callsign_registration_lookup.csv not found. Please run Fleet Setup first."
+        )
         st.stop()
 
     # Derive callsign_group and vehicle_type if not already perfect from the CSV
     # (The fleet_setup already does this, so it might be redundant if CSV is always up-to-date)
     if "callsign_group" not in callsign_registration_lookup_df.columns:
-        callsign_registration_lookup_df["callsign_group"] = callsign_registration_lookup_df["callsign"].str.extract(r"(\d+)")
-    if "vehicle_type" not in callsign_registration_lookup_df.columns and "model" in callsign_registration_lookup_df.columns:
+        callsign_registration_lookup_df["callsign_group"] = (
+            callsign_registration_lookup_df["callsign"].str.extract(r"(\d+)")
+        )
+    if (
+        "vehicle_type" not in callsign_registration_lookup_df.columns
+        and "model" in callsign_registration_lookup_df.columns
+    ):
         # This logic might need to align with how vehicle_type is determined in fleet_setup
         # For simplicity, let's assume it's present or use a simplified model-based inference
-        callsign_registration_lookup_df["vehicle_type"] = callsign_registration_lookup_df["model"].apply(
-            lambda x: "helicopter" if isinstance(x, str) and "Airbus" in x or "H1" in x else "car" # Simplified
+        callsign_registration_lookup_df["vehicle_type"] = (
+            callsign_registration_lookup_df["model"].apply(
+                lambda x: "helicopter"
+                if isinstance(x, str) and "Airbus" in x or "H1" in x
+                else "car"  # Simplified
+            )
         )
-
 
     # Load default rota (this is the master template for shifts)
     try:
@@ -316,72 +411,108 @@ def fleet_setup():
     # Ensure 'vehicle_type' exists before trying to use it for sorting
     if "vehicle_type" in callsign_registration_lookup_df.columns:
         vehicle_order = CategoricalDtype(categories=["helicopter", "car"], ordered=True)
-        callsign_registration_lookup_df["vehicle_type"] = callsign_registration_lookup_df["vehicle_type"].astype(vehicle_order)
-        sorted_lookup_df = callsign_registration_lookup_df.sort_values(by=["callsign_group", "vehicle_type"])
+        callsign_registration_lookup_df["vehicle_type"] = (
+            callsign_registration_lookup_df["vehicle_type"].astype(vehicle_order)
+        )
+        sorted_lookup_df = callsign_registration_lookup_df.sort_values(
+            by=["callsign_group", "vehicle_type"]
+        )
     else:
-        st.warning("'vehicle_type' column missing in callsign lookup. Rota setup might be incomplete.")
-        sorted_lookup_df = callsign_registration_lookup_df.copy() # Proceed without vehicle type sorting if missing
-
+        st.warning(
+            "'vehicle_type' column missing in callsign lookup. Rota setup might be incomplete."
+        )
+        sorted_lookup_df = (
+            callsign_registration_lookup_df.copy()
+        )  # Proceed without vehicle type sorting if missing
 
     rota_data = {}
     helicopter_rotas_by_group = {}
 
     # Define columns for the rota editor UI and their configuration
-    editable_rota_columns = ["category", "summer_start", "summer_end", "winter_start", "winter_end"]
+    editable_rota_columns = [
+        "category",
+        "summer_start",
+        "summer_end",
+        "winter_start",
+        "winter_end",
+    ]
     rota_editor_column_config = {
-        "category": st.column_config.SelectboxColumn(label="Category", options=["CC", "EC"], required=True),
-        "summer_start": st.column_config.NumberColumn(label="Summer Start Hour", min_value=0, max_value=23, step=1, required=True),
-        "summer_end": st.column_config.NumberColumn(label="Summer End Hour", min_value=0, max_value=23, step=1, required=True),
-        "winter_start": st.column_config.NumberColumn(label="Winter Start Hour", min_value=0, max_value=23, step=1, required=True),
-        "winter_end": st.column_config.NumberColumn(label="Winter End Hour", min_value=0, max_value=23, step=1, required=True),
+        "category": st.column_config.SelectboxColumn(
+            label="Category", options=["CC", "EC"], required=True
+        ),
+        "summer_start": st.column_config.NumberColumn(
+            label="Summer Start Hour", min_value=0, max_value=23, step=1, required=True
+        ),
+        "summer_end": st.column_config.NumberColumn(
+            label="Summer End Hour", min_value=0, max_value=23, step=1, required=True
+        ),
+        "winter_start": st.column_config.NumberColumn(
+            label="Winter Start Hour", min_value=0, max_value=23, step=1, required=True
+        ),
+        "winter_end": st.column_config.NumberColumn(
+            label="Winter End Hour", min_value=0, max_value=23, step=1, required=True
+        ),
     }
     # Column order for the editor will be just the editable_rota_columns
     rota_editor_column_order = editable_rota_columns[:]
 
     for idx, row_lookup in sorted_lookup_df.iterrows():
-        callsign = row_lookup['callsign']
-        model = row_lookup.get('model', 'N/A') # Use .get for safety if 'model' might be missing
+        callsign = row_lookup["callsign"]
+        model = row_lookup.get(
+            "model", "N/A"
+        )  # Use .get for safety if 'model' might be missing
         # Ensure vehicle_type and callsign_group are present in row_lookup
-        vehicle_type = row_lookup.get('vehicle_type', 'unknown')
-        group = row_lookup.get('callsign_group', 'unknown_group')
+        vehicle_type = row_lookup.get("vehicle_type", "unknown")
+        group = row_lookup.get("callsign_group", "unknown_group")
 
-        if vehicle_type == 'unknown' or group == 'unknown_group':
-            st.warning(f"Skipping {callsign} due to missing vehicle_type or callsign_group in lookup data.")
+        if vehicle_type == "unknown" or group == "unknown_group":
+            st.warning(
+                f"Skipping {callsign} due to missing vehicle_type or callsign_group in lookup data."
+            )
             continue
 
         st.markdown(f"#### Set up rota for {callsign} ({model})")
 
         # Prepare existing_rota_for_resource: contains all columns (identifiers + schedule)
-        existing_rota_for_resource = df_default_rota[df_default_rota["callsign"] == callsign].copy()
+        existing_rota_for_resource = df_default_rota[
+            df_default_rota["callsign"] == callsign
+        ].copy()
 
         if existing_rota_for_resource.empty:
-            num_rows_input = st.number_input(f"Number of shifts for {callsign}", min_value=1, max_value=5, value=2, key=f"{callsign}_num_rows")
+            num_rows_input = st.number_input(
+                f"Number of shifts for {callsign}",
+                min_value=1,
+                max_value=5,
+                value=2,
+                key=f"{callsign}_num_rows",
+            )
             default_category_val = "EC" if vehicle_type == "helicopter" else "CC"
-            existing_rota_for_resource = pd.DataFrame({
-                "callsign": [callsign] * num_rows_input,
-                "category": [default_category_val] * num_rows_input,
-                "vehicle_type": [vehicle_type] * num_rows_input,
-                "callsign_group": [group] * num_rows_input,
-                "summer_start": [7] * num_rows_input,
-                "winter_start": [7] * num_rows_input,
-                "summer_end": [19] * num_rows_input,
-                "winter_end": [19] * num_rows_input,
-            })
+            existing_rota_for_resource = pd.DataFrame(
+                {
+                    "callsign": [callsign] * num_rows_input,
+                    "category": [default_category_val] * num_rows_input,
+                    "vehicle_type": [vehicle_type] * num_rows_input,
+                    "callsign_group": [group] * num_rows_input,
+                    "summer_start": [7] * num_rows_input,
+                    "winter_start": [7] * num_rows_input,
+                    "summer_end": [19] * num_rows_input,
+                    "winter_end": [19] * num_rows_input,
+                }
+            )
 
         # This DataFrame will be passed to st.data_editor, containing only schedule columns
         data_for_rota_editor = existing_rota_for_resource[editable_rota_columns].copy()
 
-        current_edited_df = None # This will hold the final DataFrame for this resource (with all columns)
+        current_edited_df = None  # This will hold the final DataFrame for this resource (with all columns)
 
         if vehicle_type == "car" and group in helicopter_rotas_by_group:
             toggle_key = f"{callsign}_same_as_heli"
             # Initialize session state for the toggle if not already present
             if toggle_key not in st.session_state:
-                st.session_state[toggle_key] = True # Default to using heli rota
+                st.session_state[toggle_key] = True  # Default to using heli rota
 
             use_heli_rota = st.toggle(
-                f"Use same rota as helicopter for group {group}?",
-                key=toggle_key
+                f"Use same rota as helicopter for group {group}?", key=toggle_key
             )
 
             if use_heli_rota:
@@ -391,47 +522,50 @@ def fleet_setup():
                 # Update identifiers for the car
                 full_heli_rota_template["callsign"] = callsign
                 full_heli_rota_template["vehicle_type"] = "car"
-                full_heli_rota_template["callsign_group"] = group # Should be the same group
+                full_heli_rota_template["callsign_group"] = (
+                    group  # Should be the same group
+                )
 
                 current_edited_df = full_heli_rota_template
                 st.info(f"Using helicopter rota for {callsign} ({model}).")
             else:
                 # Custom rota for the car - show editor with only schedule columns
                 edited_schedule_df = st.data_editor(
-                    data_for_rota_editor, # Contains only editable_rota_columns
+                    data_for_rota_editor,  # Contains only editable_rota_columns
                     column_order=rota_editor_column_order,
                     column_config=rota_editor_column_config,
                     hide_index=True,
                     num_rows="dynamic",
-                    key=f"{callsign}_custom_car_rota_editor"
+                    key=f"{callsign}_custom_car_rota_editor",
                 )
                 # Reconstruct the full DataFrame
                 current_edited_df = edited_schedule_df.copy()
-                current_edited_df['callsign'] = callsign
-                current_edited_df['vehicle_type'] = "car" # Explicitly car
-                current_edited_df['callsign_group'] = group
+                current_edited_df["callsign"] = callsign
+                current_edited_df["vehicle_type"] = "car"  # Explicitly car
+                current_edited_df["callsign_group"] = group
         else:
             # Default editor for helicopters, or cars not having the sync toggle
             edited_schedule_df = st.data_editor(
-                data_for_rota_editor, # Contains only editable_rota_columns
+                data_for_rota_editor,  # Contains only editable_rota_columns
                 column_order=rota_editor_column_order,
                 column_config=rota_editor_column_config,
                 hide_index=True,
                 num_rows="dynamic",
-                key=f"{callsign}_default_rota_editor"
+                key=f"{callsign}_default_rota_editor",
             )
             # Reconstruct the full DataFrame
             current_edited_df = edited_schedule_df.copy()
-            current_edited_df['callsign'] = callsign
-            current_edited_df['vehicle_type'] = vehicle_type # This vehicle's actual type
-            current_edited_df['callsign_group'] = group
+            current_edited_df["callsign"] = callsign
+            current_edited_df["vehicle_type"] = (
+                vehicle_type  # This vehicle's actual type
+            )
+            current_edited_df["callsign_group"] = group
 
         rota_data[callsign] = current_edited_df
 
         if vehicle_type == "helicopter":
             # current_edited_df is the helicopter's fully reconstructed rota
             helicopter_rotas_by_group[group] = current_edited_df.copy()
-
 
     st.markdown("## Full Rota Preview")
     if rota_data:
@@ -447,23 +581,25 @@ def fleet_setup():
                 # Add missing columns with appropriate default (e.g., NA or specific values)
                 # This handles cases where df_default_rota might have more columns than generated.
                 full_rota_df[col] = pd.NA
-                if col == "category" and "category" not in full_rota_df.columns: # Example default
-                    full_rota_df[col] = "EC" # Or some other logic for default category
+                if (
+                    col == "category" and "category" not in full_rota_df.columns
+                ):  # Example default
+                    full_rota_df[col] = "EC"  # Or some other logic for default category
 
         # Select and order columns according to the df_default_rota schema
         # Filter full_rota_df.columns to only those that are also in df_default_rota.columns
         # to prevent errors if full_rota_df accidentally gains extra columns not in the schema.
-        final_columns_ordered = [col for col in df_default_rota.columns if col in full_rota_df.columns]
+        final_columns_ordered = [
+            col for col in df_default_rota.columns if col in full_rota_df.columns
+        ]
         full_rota_df = full_rota_df[final_columns_ordered]
-
 
         st.dataframe(full_rota_df, hide_index=True)
         # Save to HEMS_ROTA.csv (the working file), not HEMS_ROTA_DEFAULT.csv
-        full_rota_df.to_csv('actual_data/HEMS_ROTA.csv', index=False)
+        full_rota_df.to_csv("actual_data/HEMS_ROTA.csv", index=False)
         st.success("Final rota automatically saved to HEMS_ROTA.csv!")
     else:
         st.warning("No rota data generated to preview or save.")
-
 
 
 fleet_setup()
@@ -473,7 +609,6 @@ fleet_setup()
 #     st.caption(get_text("summer_rota_help", text_df))
 # with col_winter:
 #     st.caption(get_text("winter_rota_help", text_df))
-
 
 
 # @st.fragment
@@ -765,18 +900,23 @@ st.header(get_text("additional_params_header", text_df))
 
 st.caption(get_text("additional_params_help", text_df))
 
+
 @st.fragment
 def additional_params_expander():
     st.markdown("### Replications")
 
     number_of_runs_input = st.slider(
-            "Number of Runs",
-            min_value=1,
-            max_value=100,
-            value=st.session_state.number_of_runs_input,
-            on_change= lambda: setattr(st.session_state, 'number_of_runs_input', st.session_state.key_number_of_runs_input),
-            key="key_number_of_runs_input",
-            help="""
+        "Number of Runs",
+        min_value=1,
+        max_value=100,
+        value=st.session_state.number_of_runs_input,
+        on_change=lambda: setattr(
+            st.session_state,
+            "number_of_runs_input",
+            st.session_state.key_number_of_runs_input,
+        ),
+        key="key_number_of_runs_input",
+        help="""
 This controls how many times the simulation will repeat. On each repeat, while the core parameters
 will stay the same, slight randomness will occur in the patterns of arrivals and in choices like which
 resource responds, what the outcome of each job is, and more.
@@ -790,8 +930,8 @@ happen — not just a single outcome, but the full picture of what’s likely an
 For example, by running 10 replications of 1 year, we can get a better sense of how well the model
 will cope in busier and quieter times, helping to understand the likely range of performance that
 might be observed in the real world.
-"""
-            )
+""",
+    )
 
     st.markdown("### Simulation and Warm-up Duration")
 
@@ -799,48 +939,51 @@ might be observed in the real world.
 
     col_button_1.button(
         "Set sim duration to 4 weeks",
-        on_click = lambda: setattr(st.session_state, 'sim_duration_input', 7 * 4),
-
+        on_click=lambda: setattr(st.session_state, "sim_duration_input", 7 * 4),
     )
 
     col_button_2.button(
         "Set sim duration to 1 year",
-        on_click = lambda: setattr(st.session_state, 'sim_duration_input', 365),
-
+        on_click=lambda: setattr(st.session_state, "sim_duration_input", 365),
     )
 
     col_button_3.button(
         "Set sim duration to 2 years",
-        on_click = lambda: setattr(st.session_state, 'sim_duration_input', 365*2),
-
+        on_click=lambda: setattr(st.session_state, "sim_duration_input", 365 * 2),
     )
 
     col_button_4.button(
         "Set sim duration to 3 years",
-        on_click = lambda: setattr(st.session_state, 'sim_duration_input', 365*3),
-
+        on_click=lambda: setattr(st.session_state, "sim_duration_input", 365 * 3),
     )
 
-    sim_duration_input =  st.slider(
+    sim_duration_input = st.slider(
         "Simulation Duration (days)",
         min_value=1,
-        max_value=365*3,
+        max_value=365 * 3,
         value=st.session_state.sim_duration_input,
-        on_change= lambda: setattr(st.session_state, 'sim_duration_input', st.session_state.key_sim_duration_input),
-        key="key_sim_duration_input"
-        )
+        on_change=lambda: setattr(
+            st.session_state,
+            "sim_duration_input",
+            st.session_state.key_sim_duration_input,
+        ),
+        key="key_sim_duration_input",
+    )
 
-
-    warm_up_duration =  st.slider(
+    warm_up_duration = st.slider(
         "Warm-up Duration (hours)",
         min_value=0,
-        max_value=24*10,
+        max_value=24 * 10,
         value=st.session_state.warm_up_duration,
-        on_change= lambda: setattr(st.session_state, 'warm_up_duration', st.session_state.key_warm_up_duration),
-        key="key_warm_up_duration"
-        )
+        on_change=lambda: setattr(
+            st.session_state, "warm_up_duration", st.session_state.key_warm_up_duration
+        ),
+        key="key_warm_up_duration",
+    )
 
-    st.caption(f"The simulation will not start recording metrics until {(warm_up_duration / 24):.2f} days have elapsed")
+    st.caption(
+        f"The simulation will not start recording metrics until {(warm_up_duration / 24):.2f} days have elapsed"
+    )
 
     st.markdown("### Dates")
 
@@ -852,24 +995,39 @@ as well as the demand (average number of jobs received).
     sim_start_date_input = st.date_input(
         "Select the starting day for the simulation",
         value=st.session_state.sim_start_date_input,
-        on_change=lambda: setattr(st.session_state, 'sim_start_date_input', st.session_state.key_sim_start_date_input.strftime("%Y-%m-%d")),
+        on_change=lambda: setattr(
+            st.session_state,
+            "sim_start_date_input",
+            st.session_state.key_sim_start_date_input.strftime("%Y-%m-%d"),
+        ),
         key="key_sim_start_date_input",
         min_value="2023-01-01",
-        max_value="2027-01-01"
+        max_value="2027-01-01",
     ).strftime("%Y-%m-%d")
 
     sim_start_time_input = st.time_input(
         "Select the starting time for the simulation",
         value=st.session_state.sim_start_time_input,
-        on_change=lambda: setattr(st.session_state, 'sim_start_time_input', st.session_state.key_sim_start_time_input.strftime("%H:%M")),
-        key="key_sim_start_time_input"
-        ).strftime("%H:%M")
+        on_change=lambda: setattr(
+            st.session_state,
+            "sim_start_time_input",
+            st.session_state.key_sim_start_time_input.strftime("%H:%M"),
+        ),
+        key="key_sim_start_time_input",
+    ).strftime("%H:%M")
 
     st.markdown("### Reproducibility and Variation")
 
-    master_seed = st.number_input("Set the master random seed", 1, 100000, 42,
-                                  key="key_master_seed",
-                                  on_change=lambda: setattr(st.session_state, 'master_seed', st.session_state.key_master_seed))
+    master_seed = st.number_input(
+        "Set the master random seed",
+        1,
+        100000,
+        42,
+        key="key_master_seed",
+        on_change=lambda: setattr(
+            st.session_state, "master_seed", st.session_state.key_master_seed
+        ),
+    )
 
     st.markdown("### Other Modifiers")
 
@@ -878,7 +1036,11 @@ as well as the demand (average number of jobs received).
         value=st.session_state.activity_duration_multiplier,
         max_value=2.0,
         min_value=0.7,
-        on_change=lambda: setattr(st.session_state, 'activity_duration_multiplier', st.session_state.key_activity_duration_multiplier),
+        on_change=lambda: setattr(
+            st.session_state,
+            "activity_duration_multiplier",
+            st.session_state.key_activity_duration_multiplier,
+        ),
         key="key_activity_duration_multiplier",
         help="""
 This lengthens or shortens all generated activity times by the selected multiplier.
@@ -888,26 +1050,33 @@ this multiplier is set to 0.8, or lengthened to 12 minutes if the multiplier was
 \n\n
 This can be useful for experimenting with the impact of longer or shorter activity times, or for
 temporarily adjusting the model if activity times are not accurately reflecting reality.
-"""
+""",
     )
 
     create_animation_input = st.toggle(
         "Create Animation",
         value=st.session_state.create_animation_input,
-        on_change= lambda: setattr(st.session_state, 'create_animation_input', st.session_state.key_create_animation_input),
+        on_change=lambda: setattr(
+            st.session_state,
+            "create_animation_input",
+            st.session_state.key_create_animation_input,
+        ),
         key="key_create_animation_input",
         disabled=True,
-        help="Coming soon!"
-        )
+        help="Coming soon!",
+    )
 
     amb_data = st.toggle(
         "Model ambulance service data",
         value=st.session_state.amb_data,
-        on_change= lambda: setattr(st.session_state, 'amb_data', st.session_state.key_amb_data),
+        on_change=lambda: setattr(
+            st.session_state, "amb_data", st.session_state.key_amb_data
+        ),
         key="key_amb_data",
         disabled=True,
-        help="Coming soon!"
-        )
+        help="Coming soon!",
+    )
+
 
 with st.expander(get_text("additional_params_expander_title", text_df)):
     additional_params_expander()
@@ -918,12 +1087,15 @@ with st.sidebar:
     with stylable_container(
         css_styles=f"""
                     button {{
-                            background-color: {DAA_COLORSCHEME['teal']};
+                            background-color: {DAA_COLORSCHEME["teal"]};
                             color: white;
                             border-color: white;
                         }}
-                        """, key="teal_buttons"
-            ):
-        if st.button("Finished setting up parameters?\n\nClick here to go to the model page",
-                     icon=":material/play_circle:"):
+                        """,
+        key="teal_buttons",
+    ):
+        if st.button(
+            "Finished setting up parameters?\n\nClick here to go to the model page",
+            icon=":material/play_circle:",
+        ):
             st.switch_page("model.py")

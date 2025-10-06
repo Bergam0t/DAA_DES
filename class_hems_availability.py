@@ -11,6 +11,7 @@ from numpy.random import SeedSequence
 import logging
 from enum import IntEnum
 
+
 class ResourceAllocationReason(IntEnum):
     NONE_AVAILABLE = 0
     MATCH_PREFERRED_CARE_CAT_HELI = 1
@@ -27,35 +28,44 @@ class ResourceAllocationReason(IntEnum):
     REG_NO_HELI_BENEFIT_ANY = 12
     REG_NO_HELI_BENEFIT_VEHICLE = 13
 
-class HEMSAvailability():
+
+class HEMSAvailability:
     """
-        # The HEMS Availability class
+    # The HEMS Availability class
 
-        This class is a filter store which can provide HEMS resources
-        based on the time of day and servicing schedule
+    This class is a filter store which can provide HEMS resources
+    based on the time of day and servicing schedule
 
 
     """
 
-    def __init__(self, env, sim_start_date, sim_duration, utility: Utils, servicing_overlap_allowed = False,
-                 servicing_buffer_weeks = 4, servicing_preferred_month = 1,
-                 print_debug_messages = False, master_seed=SeedSequence(42)):
-
+    def __init__(
+        self,
+        env,
+        sim_start_date,
+        sim_duration,
+        utility: Utils,
+        servicing_overlap_allowed=False,
+        servicing_buffer_weeks=4,
+        servicing_preferred_month=1,
+        print_debug_messages=False,
+        master_seed=SeedSequence(42),
+    ):
         self.LOOKUP_LIST = [
-            "No HEMS resource available", #0
-            "Preferred HEMS care category and vehicle type match", # 1
-            "Preferred HEMS care category match but not vehicle type", # 2
-            "HEMS CC case EC helicopter available", # 3
-            "HEMS CC case EC car available", # 4
-            "HEMS EC case CC helicopter available", # 5
-            "HEMS EC case CC car available", # 6
+            "No HEMS resource available",  # 0
+            "Preferred HEMS care category and vehicle type match",  # 1
+            "Preferred HEMS care category match but not vehicle type",  # 2
+            "HEMS CC case EC helicopter available",  # 3
+            "HEMS CC case EC car available",  # 4
+            "HEMS EC case CC helicopter available",  # 5
+            "HEMS EC case CC car available",  # 6
             "HEMS REG helicopter case EC helicopter available",
             "HEMS REG helicopter case CC helicopter available",
-            "HEMS REG case no helicopter benefit preferred group and vehicle type allocated", # 9
-            "HEMS REG case no helicopter benefit preferred group allocated", # 10
-            "No HEMS resource available (pref vehicle type = 'Other')", # 11
-            "HEMS REG case no helicopter benefit first free resource allocated", # 12
-            "HEMS REG case no helicopter benefit free helicopter allocated" #13
+            "HEMS REG case no helicopter benefit preferred group and vehicle type allocated",  # 9
+            "HEMS REG case no helicopter benefit preferred group allocated",  # 10
+            "No HEMS resource available (pref vehicle type = 'Other')",  # 11
+            "HEMS REG case no helicopter benefit first free resource allocated",  # 12
+            "HEMS REG case no helicopter benefit free helicopter allocated",  # 13
         ]
 
         self.env = env
@@ -73,15 +83,19 @@ class HEMSAvailability():
         # For belts and braces, add an additional year to
         # calculate the service schedules since service dates can be walked back to the
         # previous year
-        self.sim_end_date = sim_start_date + timedelta(minutes=sim_duration + (1*365*24*60))
+        self.sim_end_date = sim_start_date + timedelta(
+            minutes=sim_duration + (1 * 365 * 24 * 60)
+        )
 
         # School holidays
-        self.school_holidays = pd.read_csv('actual_data/school_holidays.csv')
+        self.school_holidays = pd.read_csv("actual_data/school_holidays.csv")
 
         self.HEMS_resources_list = []
 
-        self.active_callsign_groups = set()     # Prevents same crew being used twice...hopefully...
-        self.active_registrations = set()       # Prevents same vehicle being used twice
+        self.active_callsign_groups = (
+            set()
+        )  # Prevents same crew being used twice...hopefully...
+        self.active_registrations = set()  # Prevents same vehicle being used twice
         self.active_callsigns = set()
 
         # Create a store for HEMS resources
@@ -96,29 +110,31 @@ class HEMSAvailability():
         self.populate_store()
 
         # Daily servicing check (in case sim starts during a service)
-        [dow, hod, weekday, month, qtr, current_dt] = self.utilityClass.date_time_of_call(self.sim_start_date, self.env.now)
+        [dow, hod, weekday, month, qtr, current_dt] = (
+            self.utilityClass.date_time_of_call(self.sim_start_date, self.env.now)
+        )
 
         self.daily_servicing_check(current_dt, hod, month)
 
     def debug(self, message: str):
         if self.print_debug_messages:
             logging.debug(message)
-            #print(message)
+            # print(message)
 
     def daily_servicing_check(self, current_dt: datetime, hour: int, month: int):
         """
-            Function to iterate through the store and trigger the service check
-            function in the HEMS class
+        Function to iterate through the store and trigger the service check
+        function in the HEMS class
         """
         h: HEMS
 
-        self.debug('------ DAILY SERVICING CHECK -------')
+        self.debug("------ DAILY SERVICING CHECK -------")
 
         GDAAS_service = False
 
         all_resources = self.serviceStore.items + self.store.items
         for h in all_resources:
-            if h.registration == 'g-daas':
+            if h.registration == "g-daas":
                 GDAAS_service = h.unavailable_due_to_service(current_dt)
                 break
 
@@ -128,24 +144,27 @@ class HEMSAvailability():
         to_return = [
             (s.category, s.registration)
             for s in self.serviceStore.items
-            if not s.service_check(current_dt, GDAAS_service) # Note the NOT here!
+            if not s.service_check(current_dt, GDAAS_service)  # Note the NOT here!
         ]
 
         # Attempted fix for gap after return from H70 duties
         for h in self.store.items:
-            if h.registration == 'g-daan' and not GDAAS_service:
+            if h.registration == "g-daan" and not GDAAS_service:
                 h.callsign_group = 71
-                h.callsign = 'H71'
+                h.callsign = "H71"
 
         if to_return:
             self.debug("Service store has items to return")
 
         for category, registration in to_return:
             s = yield self.serviceStore.get(
-                lambda item: item.category == category and item.registration == registration
+                lambda item: item.category == category
+                and item.registration == registration
             )
             yield self.store.put(s)
-            self.debug(f"Returned [{s.category} / {s.registration}] from service to store")
+            self.debug(
+                f"Returned [{s.category} / {s.registration}] from service to store"
+            )
 
         # --- Send from store to serviceStore ---
         to_service = [
@@ -156,97 +175,116 @@ class HEMSAvailability():
 
         for category, registration in to_service:
             self.debug("****************")
-            self.debug(f"HEMS [{category} / {registration}] being serviced, removing from store")
-
-            h = yield self.store.get(
-                lambda item: item.category == category and item.registration == registration
+            self.debug(
+                f"HEMS [{category} / {registration}] being serviced, removing from store"
             )
 
-            self.debug(f"HEMS [{h.category} / {h.registration}] successfully removed from store")
+            h = yield self.store.get(
+                lambda item: item.category == category
+                and item.registration == registration
+            )
+
+            self.debug(
+                f"HEMS [{h.category} / {h.registration}] successfully removed from store"
+            )
             yield self.serviceStore.put(h)
             self.debug(f"HEMS [{h.category} / {h.registration}] moved to service store")
             self.debug("***********")
 
         self.debug(self.current_store_status(hour, month))
-        self.debug(self.current_store_status(hour, month, 'service'))
+        self.debug(self.current_store_status(hour, month, "service"))
 
-        [dow, hod, weekday, month, qtr, current_dt] = self.utilityClass.date_time_of_call(self.sim_start_date, self.env.now)
+        [dow, hod, weekday, month, qtr, current_dt] = (
+            self.utilityClass.date_time_of_call(self.sim_start_date, self.env.now)
+        )
         for h in self.store.items:
-            if h.registration == 'g-daan':
-                self.debug(f"[{self.env.now}] g-daan status: in_use={h.in_use}, callsign={h.callsign}, group={h.callsign_group}, on_shift={h.hems_resource_on_shift(hod, month)}")
+            if h.registration == "g-daan":
+                self.debug(
+                    f"[{self.env.now}] g-daan status: in_use={h.in_use}, callsign={h.callsign}, group={h.callsign_group}, on_shift={h.hems_resource_on_shift(hod, month)}"
+                )
 
-        self.debug('------ END OF DAILY SERVICING CHECK -------')
-
+        self.debug("------ END OF DAILY SERVICING CHECK -------")
 
     def prep_HEMS_resources(self) -> None:
         """
-            This function ingests HEMS resource data from a user-supplied CSV file
-            and populates a list of HEMS class objects. The key activity here is
-            the calculation of service schedules for each HEMS object, taking into account a
-            user-specified preferred month of servicing, service duration, and a buffer period
-            following a service to allow for over-runs and school holidays
+        This function ingests HEMS resource data from a user-supplied CSV file
+        and populates a list of HEMS class objects. The key activity here is
+        the calculation of service schedules for each HEMS object, taking into account a
+        user-specified preferred month of servicing, service duration, and a buffer period
+        following a service to allow for over-runs and school holidays
 
         """
 
         schedule = []
         service_dates = []
 
-
         # Calculate service schedules for each resource
 
-        SERVICING_SCHEDULE = pd.read_csv('actual_data/service_schedules_by_model.csv')
-        SERVICE_HISTORY = pd.read_csv('actual_data/service_history.csv', na_values=0)
-        CALLSIGN_REGISTRATION = pd.read_csv('actual_data/callsign_registration_lookup.csv')
+        SERVICING_SCHEDULE = pd.read_csv("actual_data/service_schedules_by_model.csv")
+        SERVICE_HISTORY = pd.read_csv("actual_data/service_history.csv", na_values=0)
+        CALLSIGN_REGISTRATION = pd.read_csv(
+            "actual_data/callsign_registration_lookup.csv"
+        )
 
         SERVICING_SCHEDULE = SERVICING_SCHEDULE.merge(
-            CALLSIGN_REGISTRATION,
-            how="right",
-            on="model"
-            )
+            CALLSIGN_REGISTRATION, how="right", on="model"
+        )
 
         SERVICING_SCHEDULE = SERVICING_SCHEDULE.merge(
-            SERVICE_HISTORY,
-            how="left",
-            on="registration"
-            )
+            SERVICE_HISTORY, how="left", on="registration"
+        )
 
         self.debug(f"prep_hems_resources: schedule {SERVICING_SCHEDULE}")
 
         for index, row in SERVICING_SCHEDULE.iterrows():
-            #self.debug(row)
+            # self.debug(row)
             current_resource_service_dates = []
             # Check if service date provided
-            if not pd.isna(row['last_service']):
-                #self.debug(f"Checking {row['registration']} with previous service date of {row['last_service']}")
-                last_service = datetime.strptime(row['last_service'], "%Y-%m-%d")
+            if not pd.isna(row["last_service"]):
+                # self.debug(f"Checking {row['registration']} with previous service date of {row['last_service']}")
+                last_service = datetime.strptime(row["last_service"], "%Y-%m-%d")
                 service_date = last_service
 
                 while last_service < self.sim_end_date:
-
-                    end_date = last_service + \
-                        timedelta(weeks = int(row['service_duration_weeks'])) + \
-                        timedelta(weeks=self.serviing_buffer_weeks)
+                    end_date = (
+                        last_service
+                        + timedelta(weeks=int(row["service_duration_weeks"]))
+                        + timedelta(weeks=self.serviing_buffer_weeks)
+                    )
 
                     service_date, end_date = self.find_next_service_date(
                         last_service,
                         row["service_schedule_months"],
                         service_dates,
-                        row['service_duration_weeks']
+                        row["service_duration_weeks"],
                     )
 
-                    schedule.append((row['registration'], service_date, end_date))
-                    #self.debug(service_date)
-                    service_dates.append({'service_start_date': service_date, 'service_end_date': end_date})
+                    schedule.append((row["registration"], service_date, end_date))
+                    # self.debug(service_date)
+                    service_dates.append(
+                        {
+                            "service_start_date": service_date,
+                            "service_end_date": end_date,
+                        }
+                    )
 
-                    current_resource_service_dates.append({'service_start_date': service_date, 'service_end_date': end_date})
-                    #self.debug(service_dates)
-                    #self.debug(current_resource_service_dates)
+                    current_resource_service_dates.append(
+                        {
+                            "service_start_date": service_date,
+                            "service_end_date": end_date,
+                        }
+                    )
+                    # self.debug(service_dates)
+                    # self.debug(current_resource_service_dates)
                     last_service = service_date
             else:
-                schedule.append((row['registration'], None, None))
-                #self.debug(schedule)
+                schedule.append((row["registration"], None, None))
+                # self.debug(schedule)
 
-            service_df = pd.DataFrame(schedule, columns=["registration", "service_start_date", "service_end_date"])
+            service_df = pd.DataFrame(
+                schedule,
+                columns=["registration", "service_start_date", "service_end_date"],
+            )
 
             service_df.to_csv("data/service_dates.csv", index=False)
 
@@ -254,44 +292,38 @@ class HEMSAvailability():
 
         HEMS_RESOURCES = (
             pd.read_csv("actual_data/HEMS_ROTA.csv")
-                # Add model and servicing rules
-                .merge(
-                    SERVICING_SCHEDULE,
-                    on=["callsign", "vehicle_type"],
-                    how="left"
-                )
+            # Add model and servicing rules
+            .merge(SERVICING_SCHEDULE, on=["callsign", "vehicle_type"], how="left")
         )
 
         for index, row in HEMS_RESOURCES.iterrows():
-
-            s = service_df[service_df['registration'] == row['registration']]
-            #self.debug(s)
+            s = service_df[service_df["registration"] == row["registration"]]
+            # self.debug(s)
 
             # Create new HEMS resource and add to HEMS_resource_list
-            #pd.DataFrame(columns=['year', 'service_start_date', 'service_end_date'])
+            # pd.DataFrame(columns=['year', 'service_start_date', 'service_end_date'])
             hems = HEMS(
-                callsign            = row['callsign'],
-                callsign_group      = row['callsign_group'],
-                vehicle_type        = row['vehicle_type'],
-                category            = row['category'],
-                registration        = row['registration'],
-                summer_start        = row['summer_start'],
-                winter_start        = row['winter_start'],
-                summer_end          = row['summer_end'],
-                winter_end          = row['winter_end'],
-                servicing_schedule  = s,
-                resource_id         = row['registration']
+                callsign=row["callsign"],
+                callsign_group=row["callsign_group"],
+                vehicle_type=row["vehicle_type"],
+                category=row["category"],
+                registration=row["registration"],
+                summer_start=row["summer_start"],
+                winter_start=row["winter_start"],
+                summer_end=row["summer_end"],
+                winter_end=row["winter_end"],
+                servicing_schedule=s,
+                resource_id=row["registration"],
             )
 
             self.HEMS_resources_list.append(hems)
 
-        #self.debug(self.HEMS_resources_list)
-
+        # self.debug(self.HEMS_resources_list)
 
     def populate_store(self):
         """
-            Function to populate the filestore with HEMS class objects
-            contained in a class list
+        Function to populate the filestore with HEMS class objects
+        contained in a class list
         """
 
         h: HEMS
@@ -300,12 +332,11 @@ class HEMSAvailability():
             self.debug(h.servicing_schedule)
             self.store.put(h)
 
-
     def add_hems(self):
         """
-            Future function to allow for adding HEMS resources.
-            We might not use this (we could just amend the HEMS_ROTA dataframe, for example)
-            but might be useful for 'what if' simulations
+        Future function to allow for adding HEMS resources.
+        We might not use this (we could just amend the HEMS_ROTA dataframe, for example)
+        but might be useful for 'what if' simulations
         """
         pass
 
@@ -326,7 +357,7 @@ class HEMSAvailability():
     #         "HEMS helicopter case EC helicopter available",
     #         "HEMS helicopter case CC helicopter available",
     #         "HEMS REG case no helicopter benefit preferred group and vehicle type allocated",
-	#         "HEMS REG case no helicopter benefit preferred group allocated",
+    #         "HEMS REG case no helicopter benefit preferred group allocated",
     #         "No HEMS resource available (pref vehicle type = 'Other')",
     #         "HEMS REG case no helicopter benefit first free resource allocated"
     #     ]
@@ -336,24 +367,27 @@ class HEMSAvailability():
     def resource_allocation_lookup(self, reason: ResourceAllocationReason) -> str:
         return self.LOOKUP_LIST[reason.value]
 
-    def current_store_status(self, hour, month, store = 'resource') -> list[str]:
-            """
-                Debugging function to return current state of store
-            """
+    def current_store_status(self, hour, month, store="resource") -> list[str]:
+        """
+        Debugging function to return current state of store
+        """
 
-            current_store_items = []
+        current_store_items = []
 
-            h: HEMS
+        h: HEMS
 
-            if store == 'resource':
-                for h in self.store.items:
-                    current_store_items.append(f"{h.callsign} ({h.category} online: {h.hems_resource_on_shift(hour, month)} {h.registration})")
-            else:
-                for h in self.serviceStore.items:
-                    current_store_items.append(f"{h.callsign} ({h.category} online: {h.hems_resource_on_shift(hour, month)} {h.registration})")
+        if store == "resource":
+            for h in self.store.items:
+                current_store_items.append(
+                    f"{h.callsign} ({h.category} online: {h.hems_resource_on_shift(hour, month)} {h.registration})"
+                )
+        else:
+            for h in self.serviceStore.items:
+                current_store_items.append(
+                    f"{h.callsign} ({h.category} online: {h.hems_resource_on_shift(hour, month)} {h.registration})"
+                )
 
-            return current_store_items
-
+        return current_store_items
 
     # def preferred_resource_available(self, pt: Patient) -> list[HEMS | None, str]:
 
@@ -463,31 +497,47 @@ class HEMSAvailability():
         """
         # Retrieve patient’s preferred care category
         preferred_category = pt.hems_cc_or_ec
-        self.debug(f"EC/CC resource with {preferred_category} and hour {pt.hour} and qtr {pt.qtr}")
+        self.debug(
+            f"EC/CC resource with {preferred_category} and hour {pt.hour} and qtr {pt.qtr}"
+        )
 
-        best_hems: HEMS | None = None       # Best-matching HEMS unit found so far
-        best_priority = float('inf')        # Lower values = better matches
-        best_lookup = ResourceAllocationReason.NONE_AVAILABLE # Reason for final allocation
+        best_hems: HEMS | None = None  # Best-matching HEMS unit found so far
+        best_priority = float("inf")  # Lower values = better matches
+        best_lookup = (
+            ResourceAllocationReason.NONE_AVAILABLE
+        )  # Reason for final allocation
 
         for h in self.store.items:
             # --- FILTER OUT UNAVAILABLE RESOURCES ---
             if (
-                h.in_use or  # Already dispatched
-                h.being_serviced or # Currently under maintenance
-                not h.hems_resource_on_shift(pt.hour, pt.month) or # Not scheduled for shift now
-                h.callsign_group in self.active_callsign_groups or # Another unit from this group is active (so crew is engaged elsewhere)
-                h.registration in self.active_registrations # This specific unit is already dispatched
+                h.in_use  # Already dispatched
+                or h.being_serviced  # Currently under maintenance
+                or not h.hems_resource_on_shift(
+                    pt.hour, pt.month
+                )  # Not scheduled for shift now
+                or h.callsign_group
+                in self.active_callsign_groups  # Another unit from this group is active (so crew is engaged elsewhere)
+                or h.registration
+                in self.active_registrations  # This specific unit is already dispatched
             ):
                 continue  # Move to the next HEMS unit
 
             # Check ad-hoc reason
             # For "car" units, assume always available.
             # For helicopters, simulate availability using ad-hoc logic (e.g., weather, servicing).
-            reason = "available" if h.vehicle_type == "car" else self.utilityClass.sample_ad_hoc_reason(pt.hour, pt.qtr, h.registration)
-            self.debug(f"({h.callsign}) Sampled reason for patient {pt.id} ({pt.hems_cc_or_ec}) is: {reason}")
+            reason = (
+                "available"
+                if h.vehicle_type == "car"
+                else self.utilityClass.sample_ad_hoc_reason(
+                    pt.hour, pt.qtr, h.registration
+                )
+            )
+            self.debug(
+                f"({h.callsign}) Sampled reason for patient {pt.id} ({pt.hems_cc_or_ec}) is: {reason}"
+            )
 
             if reason != "available":
-                continue # Skip this unit if not usable
+                continue  # Skip this unit if not usable
 
             # Decide priority and reason
             priority = None
@@ -530,13 +580,16 @@ class HEMSAvailability():
 
                 # Immediate return if best possible match found (priority 1)
                 if priority == 1:
-                    self.debug(f"Top priority match found: {best_lookup.name} ({best_lookup.value})")
+                    self.debug(
+                        f"Top priority match found: {best_lookup.name} ({best_lookup.value})"
+                    )
                     return [best_hems, self.resource_allocation_lookup(best_lookup)]
 
         # Final fallback: return the best match found (if any), or none with reason
-        self.debug(f"Selected best lookup: {best_lookup.name} ({best_lookup.value}) with priority = {best_priority}")
+        self.debug(
+            f"Selected best lookup: {best_lookup.name} ({best_lookup.value}) with priority = {best_priority}"
+        )
         return [best_hems, self.resource_allocation_lookup(best_lookup)]
-
 
     def allocate_resource(self, pt: Patient) -> Any | Event:
         """
@@ -545,7 +598,9 @@ class HEMSAvailability():
         resource_event: Event = self.env.event()
 
         def process() -> Generator[Any, Any, None]:
-            self.debug(f"Allocating resource for {pt.id} and care cat {pt.hems_cc_or_ec}")
+            self.debug(
+                f"Allocating resource for {pt.id} and care cat {pt.hems_cc_or_ec}"
+            )
 
             pref_res: list[HEMS | None, str] = self.preferred_resource_available(pt)
 
@@ -585,16 +640,15 @@ class HEMSAvailability():
                     # self.active_callsigns.add(primary.callsign)
 
                     # Try to get a secondary resource
-                    with self.store.get(lambda r:
-                        r != primary and
-                        r.callsign_group == pt.hems_callsign_group and
-                        r.category == pt.hems_category and
-                        r.hems_resource_on_shift(pt.hour, pt.month) and
-                        r.callsign_group not in self.active_callsign_groups and
-                        r.registration not in self.active_registrations and
-                        r.callsign not in self.active_callsigns
+                    with self.store.get(
+                        lambda r: r != primary
+                        and r.callsign_group == pt.hems_callsign_group
+                        and r.category == pt.hems_category
+                        and r.hems_resource_on_shift(pt.hour, pt.month)
+                        and r.callsign_group not in self.active_callsign_groups
+                        and r.registration not in self.active_registrations
+                        and r.callsign not in self.active_callsigns
                     ) as secondary_request:
-
                         result2 = yield secondary_request | self.env.timeout(0.1)
                         secondary = None
 
@@ -607,7 +661,7 @@ class HEMSAvailability():
 
                     return resource_event.succeed([primary, pref_res[1], secondary])
                 else:
-                        # Roll back if unsuccessful
+                    # Roll back if unsuccessful
                     self.active_callsign_groups.discard(primary.callsign_group)
                     self.active_registrations.discard(primary.registration)
                     self.active_callsigns.discard(primary.callsign)
@@ -617,10 +671,9 @@ class HEMSAvailability():
         self.env.process(process())
         return resource_event
 
-
-    def return_resource(self, resource: HEMS, secondary_resource: HEMS|None) -> None:
+    def return_resource(self, resource: HEMS, secondary_resource: HEMS | None) -> None:
         """
-            Class to return HEMS class object back to the filestore.
+        Class to return HEMS class object back to the filestore.
         """
 
         resource.in_use = False
@@ -636,83 +689,102 @@ class HEMSAvailability():
             self.active_registrations.discard(secondary_resource.registration)
             self.active_callsigns.discard(secondary_resource.callsign)
             self.store.put(secondary_resource)
-            self.debug(f"{secondary_resource.callsign} free as {resource.callsign} finished job")
-
-
+            self.debug(
+                f"{secondary_resource.callsign} free as {resource.callsign} finished job"
+            )
 
     def years_between(self, start_date: datetime, end_date: datetime) -> list[int]:
         """
-            Function to return a list of years between given start and end date
+        Function to return a list of years between given start and end date
         """
         return list(range(start_date.year, end_date.year + 1))
 
-
-    def do_ranges_overlap(self, start1: datetime, end1: datetime, start2: datetime, end2: datetime) -> bool:
+    def do_ranges_overlap(
+        self, start1: datetime, end1: datetime, start2: datetime, end2: datetime
+    ) -> bool:
         """
-            Function to determine whether two sets of datetimes overlap
+        Function to determine whether two sets of datetimes overlap
         """
         return max(start1, start2) <= min(end1, end2)
 
-
-    def is_during_school_holidays(self, start_date: datetime, end_date: datetime) -> bool:
+    def is_during_school_holidays(
+        self, start_date: datetime, end_date: datetime
+    ) -> bool:
         """
-            Function to calculate whether given start and end date time period falls within
-            a school holiday
+        Function to calculate whether given start and end date time period falls within
+        a school holiday
         """
 
         for index, row in self.school_holidays.iterrows():
-
-            if self.do_ranges_overlap(pd.to_datetime(row['start_date']), pd.to_datetime(row['end_date']), start_date, end_date):
+            if self.do_ranges_overlap(
+                pd.to_datetime(row["start_date"]),
+                pd.to_datetime(row["end_date"]),
+                start_date,
+                end_date,
+            ):
                 return True
 
         return False
-
 
     def is_other_resource_being_serviced(self, start_date, end_date, service_dates):
         """
-            Function to determine whether any resource is being services between a
-            given start and end date period.
+        Function to determine whether any resource is being services between a
+        given start and end date period.
         """
 
         for sd in service_dates:
-            if self.do_ranges_overlap(sd['service_start_date'], sd['service_end_date'], start_date, end_date):
+            if self.do_ranges_overlap(
+                sd["service_start_date"], sd["service_end_date"], start_date, end_date
+            ):
                 return True
 
         return False
 
-
-    def find_next_service_date(self, last_service_date: datetime, interval_months: int, service_dates: list, service_duration: int) -> list[datetime]:
+    def find_next_service_date(
+        self,
+        last_service_date: datetime,
+        interval_months: int,
+        service_dates: list,
+        service_duration: int,
+    ) -> list[datetime]:
         """
-            Function to determine the next service date for a resource. The date is determine by
-            the servicing schedule for the resource, the preferred month of servicing, and to
-            avoid dates that fall in either school holidays or when other resources are being serviced.
+        Function to determine the next service date for a resource. The date is determine by
+        the servicing schedule for the resource, the preferred month of servicing, and to
+        avoid dates that fall in either school holidays or when other resources are being serviced.
         """
 
-        next_due_date = last_service_date + relativedelta(months = interval_months) # Approximate month length
-        end_date = next_due_date + timedelta(weeks = service_duration)
+        next_due_date = last_service_date + relativedelta(
+            months=interval_months
+        )  # Approximate month length
+        end_date = next_due_date + timedelta(weeks=service_duration)
 
-        preferred_date = datetime(next_due_date.year, self.servicing_preferred_month , 2)
-        preferred_end_date = preferred_date + timedelta(weeks = service_duration)
+        preferred_date = datetime(next_due_date.year, self.servicing_preferred_month, 2)
+        preferred_end_date = preferred_date + timedelta(weeks=service_duration)
 
         if next_due_date.month > preferred_date.month:
-            preferred_date += relativedelta(years = 1)
+            preferred_date += relativedelta(years=1)
 
         # self.debug(f"Next due: {next_due_date} with end date {end_date} and preferred_date is {preferred_date} with pref end {preferred_end_date}")
 
         # If preferred date is valid, use it
-        if preferred_date <= next_due_date and not self.is_during_school_holidays(preferred_date, preferred_end_date):
+        if preferred_date <= next_due_date and not self.is_during_school_holidays(
+            preferred_date, preferred_end_date
+        ):
             next_due_date = preferred_date
 
         while True:
-            if self.is_during_school_holidays(next_due_date, end_date) or self.is_other_resource_being_serviced(next_due_date, end_date, service_dates):
-                next_due_date -= timedelta(days = 1)
-                end_date = next_due_date + timedelta(weeks = service_duration)
+            if self.is_during_school_holidays(
+                next_due_date, end_date
+            ) or self.is_other_resource_being_serviced(
+                next_due_date, end_date, service_dates
+            ):
+                next_due_date -= timedelta(days=1)
+                end_date = next_due_date + timedelta(weeks=service_duration)
                 continue
             else:
                 break
 
         return [next_due_date, end_date]
-
 
     # def preferred_regular_group_available(self, pt: Patient) -> list[HEMS | None, str]:
     #     """
@@ -738,7 +810,6 @@ class HEMSAvailability():
     #             h.registration in self.active_registrations
     #             ):
     #             continue
-
 
     #         if h.vehicle_type == "car":
     #             ad_hoc_reason = "available"
@@ -795,32 +866,52 @@ class HEMSAvailability():
                 - A lookup code describing the allocation reason
         """
         # Initialize selection variables
-        hems: HEMS | None = None # The selected resource
-        preferred = float("inf") # Lower numbers mean more preferred options (2, 4, 5 are used below)
-        preferred_lookup = ResourceAllocationReason.NONE_AVAILABLE  # Reason code for selection
+        hems: HEMS | None = None  # The selected resource
+        preferred = float(
+            "inf"
+        )  # Lower numbers mean more preferred options (2, 4, 5 are used below)
+        preferred_lookup = (
+            ResourceAllocationReason.NONE_AVAILABLE
+        )  # Reason code for selection
 
-        preferred_group = pt.hems_pref_callsign_group        # Preferred crew group
-        preferred_vehicle_type = pt.hems_pref_vehicle_type    # e.g., "car" or "helicopter"
-        helicopter_benefit = pt.hems_helicopter_benefit       # "y" if helicopter has clinical benefit
+        preferred_group = pt.hems_pref_callsign_group  # Preferred crew group
+        preferred_vehicle_type = (
+            pt.hems_pref_vehicle_type
+        )  # e.g., "car" or "helicopter"
+        helicopter_benefit = (
+            pt.hems_helicopter_benefit
+        )  # "y" if helicopter has clinical benefit
         # Iterate through all HEMS resources stored
         for h in self.store.items:
             if (
-                h.in_use or # Already dispatched
-                h.being_serviced or # Currently under maintenance
-                not h.hems_resource_on_shift(pt.hour, pt.month) or # Not scheduled for shift now
-                h.callsign_group in self.active_callsign_groups or  # Another unit from this group is active (so crew is engaged elsewhere)
-                h.registration in self.active_registrations # This specific unit is already dispatched
+                h.in_use  # Already dispatched
+                or h.being_serviced  # Currently under maintenance
+                or not h.hems_resource_on_shift(
+                    pt.hour, pt.month
+                )  # Not scheduled for shift now
+                or h.callsign_group
+                in self.active_callsign_groups  # Another unit from this group is active (so crew is engaged elsewhere)
+                or h.registration
+                in self.active_registrations  # This specific unit is already dispatched
             ):
-                continue # Move to the next HEMS unit
+                continue  # Move to the next HEMS unit
 
             # Check ad hoc availability
             # For "car" units, assume always available.
             # For helicopters, simulate availability using ad-hoc logic (e.g., weather, servicing).
-            reason = "available" if h.vehicle_type == "car" else self.utilityClass.sample_ad_hoc_reason(pt.hour, pt.qtr, h.registration)
-            self.debug(f"({h.callsign}) Sampled reason for patient {pt.id} (REG) is: {reason}")
+            reason = (
+                "available"
+                if h.vehicle_type == "car"
+                else self.utilityClass.sample_ad_hoc_reason(
+                    pt.hour, pt.qtr, h.registration
+                )
+            )
+            self.debug(
+                f"({h.callsign}) Sampled reason for patient {pt.id} (REG) is: {reason}"
+            )
 
             if reason != "available":
-                continue # Skip this unit if not usable
+                continue  # Skip this unit if not usable
 
             # --- HELICOPTER BENEFIT CASE ---
             # P3 = Helicopter patient
@@ -831,41 +922,56 @@ class HEMSAvailability():
             # Assume 30% chance of knowing in advance that it's going to be a heli benefit case
             # when choosing to send a resource (and if you know that, don't fall back to
             # sending a car)
-            if helicopter_benefit == "y" and self.utilityClass.rngs["know_heli_benefit"].uniform(0, 1) <= 0.5:
+            if (
+                helicopter_benefit == "y"
+                and self.utilityClass.rngs["know_heli_benefit"].uniform(0, 1) <= 0.5
+            ):
                 # Priority 1: CC-category helicopter (assumed most beneficial)
-                    if h.vehicle_type == "helicopter" and h.category == "CC":
-                        hems = h
-                        preferred_lookup = ResourceAllocationReason.REG_HELI_BENEFIT_MATCH_CC_HELI
-                        break
-                    # Priority 2: Any helicopter (less preferred than CC, hence priority = 2)
-                    elif h.vehicle_type == "helicopter" and preferred > 2:
-                        hems = h
-                        preferred = 2
-                        preferred_lookup = ResourceAllocationReason.REG_HELI_BENEFIT_MATCH_EC_HELI
+                if h.vehicle_type == "helicopter" and h.category == "CC":
+                    hems = h
+                    preferred_lookup = (
+                        ResourceAllocationReason.REG_HELI_BENEFIT_MATCH_CC_HELI
+                    )
+                    break
+                # Priority 2: Any helicopter (less preferred than CC, hence priority = 2)
+                elif h.vehicle_type == "helicopter" and preferred > 2:
+                    hems = h
+                    preferred = 2
+                    preferred_lookup = (
+                        ResourceAllocationReason.REG_HELI_BENEFIT_MATCH_EC_HELI
+                    )
 
-
-                # If no EC or CC helicopters are available, then:
-                # - hems remains None
-                # - preferred_lookup remains at its initial value (ResourceAllocationReason.NONE_AVAILABLE)
-                # - The function exits the loop without assigning a resource.
+            # If no EC or CC helicopters are available, then:
+            # - hems remains None
+            # - preferred_lookup remains at its initial value (ResourceAllocationReason.NONE_AVAILABLE)
+            # - The function exits the loop without assigning a resource.
 
             # --- REGULAR JOB WITH NO SIMULATED HELICOPTER BENEFIT ---
             else:
                 # Best match: matching both preferred callsign group and vehicle type
-                if h.callsign_group == preferred_group and h.vehicle_type == preferred_vehicle_type:
+                if (
+                    h.callsign_group == preferred_group
+                    and h.vehicle_type == preferred_vehicle_type
+                ):
                     hems = h
-                    preferred_lookup = ResourceAllocationReason.REG_NO_HELI_BENEFIT_GROUP_AND_VEHICLE
+                    preferred_lookup = (
+                        ResourceAllocationReason.REG_NO_HELI_BENEFIT_GROUP_AND_VEHICLE
+                    )
                     break
                 # Next best: send a helicopter
                 elif h.vehicle_type == "helicopter" and preferred > 3:
                     hems = h
                     preferred = 3
-                    preferred_lookup = ResourceAllocationReason.REG_NO_HELI_BENEFIT_VEHICLE
+                    preferred_lookup = (
+                        ResourceAllocationReason.REG_NO_HELI_BENEFIT_VEHICLE
+                    )
                 # Next best: match only on preferred callsign group
                 elif h.callsign_group == preferred_group and preferred > 4:
                     hems = h
                     preferred = 4
-                    preferred_lookup = ResourceAllocationReason.REG_NO_HELI_BENEFIT_GROUP
+                    preferred_lookup = (
+                        ResourceAllocationReason.REG_NO_HELI_BENEFIT_GROUP
+                    )
                 # Fallback: any available resource
                 elif preferred > 5:
                     hems = h
@@ -873,9 +979,15 @@ class HEMSAvailability():
                     preferred_lookup = ResourceAllocationReason.REG_NO_HELI_BENEFIT_ANY
 
         # Return the best found HEMS resource and reason for selection
-        self.debug(f"Selected REG (heli benefit = {helicopter_benefit}) lookup: {preferred_lookup.name} ({preferred_lookup.value})")
-        return [hems, self.resource_allocation_lookup(preferred_lookup if hems else ResourceAllocationReason.NONE_AVAILABLE)]
-
+        self.debug(
+            f"Selected REG (heli benefit = {helicopter_benefit}) lookup: {preferred_lookup.name} ({preferred_lookup.value})"
+        )
+        return [
+            hems,
+            self.resource_allocation_lookup(
+                preferred_lookup if hems else ResourceAllocationReason.NONE_AVAILABLE
+            ),
+        ]
 
     def allocate_regular_resource(self, pt: Patient) -> Any | Event:
         """
@@ -896,15 +1008,21 @@ class HEMSAvailability():
 
             # Block if in-use by callsign group, registration, or callsign
             if primary.callsign_group in self.active_callsign_groups:
-                self.debug(f"[BLOCKED] Regular Callsign group {primary.callsign_group} in use")
+                self.debug(
+                    f"[BLOCKED] Regular Callsign group {primary.callsign_group} in use"
+                )
                 return resource_event.succeed([None, pref_res[1], None])
 
             if primary.registration in self.active_registrations:
-                self.debug(f"[BLOCKED] Regular Registration {primary.registration} in use")
+                self.debug(
+                    f"[BLOCKED] Regular Registration {primary.registration} in use"
+                )
                 return resource_event.succeed([None, pref_res[1], None])
 
             if primary.callsign in self.active_callsigns:
-                self.debug(f"[BLOCKED] Regular Callsign {primary.callsign} already in use")
+                self.debug(
+                    f"[BLOCKED] Regular Callsign {primary.callsign} already in use"
+                )
                 return resource_event.succeed([None, pref_res[1], None])
 
             self.active_callsign_groups.add(primary.callsign_group)
@@ -925,16 +1043,15 @@ class HEMSAvailability():
                     # self.active_callsigns.add(primary.callsign)
 
                     # Try to get a secondary resource
-                    with self.store.get(lambda r:
-                        r != primary and
-                        r.callsign_group == pt.hems_callsign_group and
-                        r.category == pt.hems_category and
-                        r.hems_resource_on_shift(pt.hour, pt.month) and
-                        r.callsign_group not in self.active_callsign_groups and
-                        r.registration not in self.active_registrations and
-                        r.callsign not in self.active_callsigns
+                    with self.store.get(
+                        lambda r: r != primary
+                        and r.callsign_group == pt.hems_callsign_group
+                        and r.category == pt.hems_category
+                        and r.hems_resource_on_shift(pt.hour, pt.month)
+                        and r.callsign_group not in self.active_callsign_groups
+                        and r.registration not in self.active_registrations
+                        and r.callsign not in self.active_callsigns
                     ) as secondary_request:
-
                         result2 = yield secondary_request | self.env.timeout(0.1)
                         secondary = None
 

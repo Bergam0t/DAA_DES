@@ -1,10 +1,8 @@
-
 from math import floor
 
+
 class Patient:
-
     def __init__(self, p_id: int):
-
         # Unique ID for patient
         self.id = p_id
 
@@ -24,13 +22,12 @@ class Patient:
 
         # ? Include incident times here ?
 
-
         # Demographic data
 
         self.age = 0
-        self.sex =  "female"
+        self.sex = "female"
 
-        #print(f"AMPDS code is {self.triage_code} and prop_female is {prop_female} and sex is {self.sex}")
+        # print(f"AMPDS code is {self.triage_code} and prop_female is {prop_female} and sex is {self.sex}")
 
         # Keep track of cumulatative time
         self.time_in_sim = 0
@@ -42,7 +39,7 @@ class Patient:
         self.month = 1
         self.qtr = 1
         self.weekday = "weekday"
-        self.current_dt = None # TODO: Initialise as a dt?
+        self.current_dt = None  # TODO: Initialise as a dt?
 
         # HEMS/critical care specific items
         self.time_to_cc = 0
@@ -60,8 +57,8 @@ class Patient:
         self.hems_vehicle_type = ""
         self.hems_callsign_group = ""
         self.hems_registration = ""
-        self.hems_category = "" # allocated vehicle registration
-        self.callsign = "" # allocated vehicle callsign
+        self.hems_category = ""  # allocated vehicle registration
+        self.callsign = ""  # allocated vehicle callsign
 
         self.pt_outcome = ""
 

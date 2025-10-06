@@ -1,34 +1,34 @@
-
 from utils import Utils
 import pandas as pd
 from class_ambulance import Ambulance
 
+
 class HEMS(Ambulance):
     """
-        # The HEMS class
+    # The HEMS class
 
-        This class defines a HEMS resource
+    This class defines a HEMS resource
 
 
     """
 
     def __init__(
-            self,
-            callsign: str,
-            callsign_group: str,
-            vehicle_type: str,
-            category: str,
-            registration: str,
-            summer_start: str,
-            winter_start: str,
-            summer_end: str,
-            winter_end: str,
-            servicing_schedule: pd.DataFrame,
-            resource_id: str = None,
-            summer_season: list[int] = None
-        ):
+        self,
+        callsign: str,
+        callsign_group: str,
+        vehicle_type: str,
+        category: str,
+        registration: str,
+        summer_start: str,
+        winter_start: str,
+        summer_end: str,
+        winter_end: str,
+        servicing_schedule: pd.DataFrame,
+        resource_id: str = None,
+        summer_season: list[int] = None,
+    ):
         # Inherit all parent class functions
-        super().__init__(ambulance_type = "HEMS")
+        super().__init__(ambulance_type="HEMS")
 
         self.utilityClass = Utils()
 
@@ -47,10 +47,20 @@ class HEMS(Ambulance):
 
         # Read in the summer months from a file
         summer_months = pd.read_csv("actual_data/rota_start_end_months.csv")
-        summer_start_month = int(summer_months[summer_months["what"]=="summer_start_month"]["month"].values[0])
-        summer_end_month = int(summer_months[summer_months["what"]=="summer_end_month"]["month"].values[0])
+        summer_start_month = int(
+            summer_months[summer_months["what"] == "summer_start_month"][
+                "month"
+            ].values[0]
+        )
+        summer_end_month = int(
+            summer_months[summer_months["what"] == "summer_end_month"]["month"].values[
+                0
+            ]
+        )
 
-        self.summer_season = [x for x in range(summer_start_month, summer_end_month+1)]
+        self.summer_season = [
+            x for x in range(summer_start_month, summer_end_month + 1)
+        ]
 
         # Pre-determine the servicing schedule when the resource is created
         self.servicing_schedule = servicing_schedule
@@ -59,36 +69,35 @@ class HEMS(Ambulance):
         self.resource_id = resource_id
 
     def service_check(self, current_dt: pd.Timestamp, GDAAS_service: bool) -> bool:
-
-        if self.registration == 'g-daan':
-
+        if self.registration == "g-daan":
             if GDAAS_service:
                 self.callsign_group = 70
-                self.callsign = 'H70'
+                self.callsign = "H70"
 
             else:
                 self.callsign_group = 71
-                self.callsign = 'H71'
-                self.in_use = False # We might need to re-think this in 24/7 scenarios although
-                # presumably the callsign will not change during an incident, only after.
+                self.callsign = "H71"
+                self.in_use = (
+                    False  # We might need to re-think this in 24/7 scenarios although
+                )
+                # presumably the callsign will not change during an incident, only after.
 
             # GDASS being serviced
 
-            #print(f"reg {self.registration} now has callsign {self.callsign}")
+            # print(f"reg {self.registration} now has callsign {self.callsign}")
 
         return self.unavailable_due_to_service(current_dt)
 
-
     def unavailable_due_to_service(self, current_dt: pd.Timestamp) -> bool:
         """
-            Returns logical value denoting whether the HEMS resource is currently
-            unavailable due to being serviced
+        Returns logical value denoting whether the HEMS resource is currently
+        unavailable due to being serviced
 
         """
 
         for index, row in self.servicing_schedule.iterrows():
-            #print(row)
-            if row['service_start_date'] <= current_dt <= row['service_end_date']:
+            # print(row)
+            if row["service_start_date"] <= current_dt <= row["service_end_date"]:
                 self.being_serviced = True
                 return True
 
@@ -96,10 +105,9 @@ class HEMS(Ambulance):
         return False
 
     def hems_resource_on_shift(self, hour: int, month: int) -> bool:
-
         """
-            Function to determine whether the HEMS resource is within
-            its operational hours
+        Function to determine whether the HEMS resource is within
+        its operational hours
         """
 
         # Assuming summer hours are quarters 2 and 3 i.e. April-September
