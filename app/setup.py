@@ -164,7 +164,10 @@ def fleet_setup():
     print(callsign_lookup)
 
     models = pd.concat([models, models_default]).reset_index(drop=True)
-    models = models.drop_duplicates(keep='first', subset=["model", "vehicle_type"])
+    models = models.drop_duplicates(keep="first", subset=["model", "vehicle_type"])
+    model_options = list(
+        models[models["vehicle_type"] == "helicopter"]["model"].unique()
+    )
     print(models)
 
     potential_fleet = callsign_lookup.merge(
@@ -194,20 +197,29 @@ def fleet_setup():
         default_helos,
         hide_index=True,
         key="helicopter_data_editor",
-        column_order=["callsign",
-                    #   "callsign_group",
-                      "registration", "has_car", "model", #"service_schedule_months", "service_duration_weeks"
-                      ],
+        column_order=[
+            "callsign",
+            #   "callsign_group",
+            "registration",
+            "has_car",
+            "model",  # "service_schedule_months", "service_duration_weeks"
+        ],
         column_config={
-                        "registration": st.column_config.TextColumn(label="Registration", required=True),
-                        "callsign": st.column_config.TextColumn(label="Callsign", required=True),
-                        "callsign_group": st.column_config.TextColumn(label="Callsign", disabled=True),
-                        "has_car": st.column_config.CheckboxColumn(label="Has a Backup Car"),
-                        "model": st.column_config.SelectboxColumn(label="Model", options=models[models["vehicle_type"]=="helicopter"]["model"].unique(), required=True),
-                        # "service_schedule_months": st.column_config.NumberColumn(label="Servicing Interval (Months)", disabled=True),
-                        # "service_duration_weeks": st.column_config.NumberColumn(label="Servicing Interval (Weeks)", disabled=True)
-                    },
-        )
+            "registration": st.column_config.TextColumn(
+                label="Registration", required=True
+            ),
+            "callsign": st.column_config.TextColumn(label="Callsign", required=True),
+            "callsign_group": st.column_config.TextColumn(
+                label="Callsign", disabled=True
+            ),
+            "has_car": st.column_config.CheckboxColumn(label="Has a Backup Car"),
+            "model": st.column_config.SelectboxColumn(
+                label="Model", options=model_options, required=True
+            ),
+            # "service_schedule_months": st.column_config.NumberColumn(label="Servicing Interval (Months)", disabled=True),
+            # "service_duration_weeks": st.column_config.NumberColumn(label="Servicing Interval (Weeks)", disabled=True)
+        },
+    )
 
     st.markdown("#### Define the Backup Cars")
 
