@@ -45,7 +45,7 @@ if platform.processor() == "":
     ADDITIONAL_INPUTS = {"sim_duration_input": 365 * 2, "number_of_runs_input": 5}
 
 else:
-    ADDITIONAL_INPUTS = {"sim_duration_input": 365 * 2, "number_of_runs_input": 12}
+    ADDITIONAL_INPUTS = {"sim_duration_input": 120, "number_of_runs_input": 5}
 
 DEFAULT_INPUTS.update(ADDITIONAL_INPUTS)
 

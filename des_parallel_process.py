@@ -68,7 +68,9 @@ def write_run_params(model) -> None:
 
     params_df = pd.DataFrame.from_dict(
         {
-            "sim_duration": [model.sim_duration],
+            "sim_duration": [model.sim_duration],  # model time unit is minutes
+            "sim_duration_hours": [model.sim_duration / 60],
+            "sim_duration_days": [model.sim_duration / 60 / 24],
             "warm_up_duration": [model.warm_up_duration],
             "sim_start_date": [sim_start_date],
             "sim_end_date": [sim_end_date],
