@@ -462,9 +462,6 @@ class TrialResults:
             ["run_number", "vehicle_type", "callsign"]
         )[["resource_use_duration"]].sum()
 
-        print(self.total_avail_minutes)
-        print(self.utilisation_df_per_run)
-
         # Join with df of how long each resource was available for in the sim
         # We will for now assume this is the same across each run
         self.utilisation_df_per_run = self.utilisation_df_per_run.reset_index(
@@ -1455,12 +1452,12 @@ class TrialResults:
 
         # Set up historical dataframe
         if not by_quarter:
-            historical_df = self.historical_data.historical_missed_calls_by_hour.copy()
+            historical_df = (
+                self.historical_data.historical_missed_calls_by_hour_df.copy()
+            )
 
         else:
-            historical_df = (
-                self.historical_data.historical_missed_calls_by_quarter_and_hour.copy()
-            )
+            historical_df = self.historical_data.historical_missed_calls_by_quarter_and_hour_df.copy()
 
         # Regardless of whether grouping by quarter or not, do some basic wrangling
         historical_df.rename(
@@ -2799,7 +2796,6 @@ class TrialResults:
         Returns the updated quarto_string.
         """
         with st_column:
-            print(self.utilisation_df_overall)
             with iconMetricContainer(
                 key=f"{vehicle_type_label.lower()}_util_{callsign_to_display}",
                 icon_unicode=icon_unicode,
@@ -2808,10 +2804,6 @@ class TrialResults:
                 matched_sim = self.utilisation_df_overall[
                     self.utilisation_df_overall["callsign"] == callsign_to_display
                 ]
-
-                print(callsign_to_display)
-                print(self.utilisation_df_overall["callsign"].unique())
-                print(matched_sim)
 
                 if not matched_sim.empty:
                     sim_util_fig = matched_sim["PRINT_perc"].values[0]
@@ -2956,18 +2948,20 @@ class TrialResults:
             )  # You can also try 'auto' or 'outside'
             return fig
 
-    def create_UTIL_rwc_plot(self) -> Figure:
+    def PLOT_UTIL_rwc_plot(self) -> Figure:
         #############
         # Prep real-world data
         #############
 
         jobs_by_callsign_long = (
-            self.historical_data.historical_jobs_per_month_per_callsign.melt(
+            self.historical_data.historical_monthly_totals_by_callsign.melt(
                 id_vars="month"
             )
             .rename(columns={"variable": "callsign", "value": "jobs"})
             .copy()
         )
+
+        print(jobs_by_callsign_long)
 
         all_combinations = pd.MultiIndex.from_product(
             [
@@ -2987,9 +2981,11 @@ class TrialResults:
         jobs_by_callsign_long["callsign_group"] = jobs_by_callsign_long[
             "callsign"
         ].str.extract(r"(\d+)")
+
         jobs_by_callsign_long = jobs_by_callsign_long[
             ~jobs_by_callsign_long["callsign_group"].isna()
         ]
+
         jobs_by_callsign_long["vehicle_type"] = jobs_by_callsign_long["callsign"].apply(
             lambda x: "car" if "CC" in x else "helicopter"
         )
@@ -3010,20 +3006,17 @@ class TrialResults:
             "percentage_of_group"
         ].fillna(0)
 
-        ###############
-        # Prep sim data
-        ###############
-
-        sim_averages = self.prep_util_df_from_call_df(self.call_df)
-
-        # print("==utilisation_result_calculation.py - create_UTIL_rwc_plot - sim_averages==")
-        # print(sim_averages)
+        print(jobs_by_callsign_long)
 
         fig = go.Figure()
 
         # Bar chart (Simulation Averages)
-        for idx, vehicle in enumerate(sim_averages["vehicle_type"].unique()):
-            filtered_data = sim_averages[sim_averages["vehicle_type"] == vehicle]
+        for idx, vehicle in enumerate(
+            self.sim_averages_utilisation["vehicle_type"].unique()
+        ):
+            filtered_data = self.sim_averages_utilisation[
+                self.sim_averages_utilisation["vehicle_type"] == vehicle
+            ]
 
             fig.add_trace(
                 go.Bar(
@@ -3098,8 +3091,12 @@ class TrialResults:
                     )
                 )
 
-        min_x = min(sim_averages["callsign_group"].astype("int").values)
-        max_x = max(sim_averages["callsign_group"].astype("int").values)
+        min_x = min(
+            self.sim_averages_utilisation["callsign_group"].astype("int").values
+        )
+        max_x = max(
+            self.sim_averages_utilisation["callsign_group"].astype("int").values
+        )
 
         tick_vals = list(range(min_x, max_x + 1))  # Tick positions at integer values
 

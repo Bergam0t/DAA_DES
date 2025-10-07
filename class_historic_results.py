@@ -26,7 +26,8 @@ class HistoricResults:
         self.historical_missed_calls_by_quarter_and_hour_df = None
 
         # Jobs per month
-        self.historical_jobs_per_month_per_callsign = None
+        self.historical_jobs_per_month = None
+        self.historical_monthly_totals_by_callsign = None
 
         # Jobs per day
         self.historical_jobs_per_day_per_callsign = None
@@ -71,8 +72,9 @@ class HistoricResults:
         self.get_historical_missed_calls_by_quarter_and_hour()
         self.get_care_cat_by_hour_historic()
         self.get_historical_jobs_per_day_per_callsign()
-        self.get_historical_jobs_per_month_per_callsign()
+        self.get_historical_jobs_per_month()
         self.get_historical_activity_durations_summary()
+        self.get_historical_monthly_totals_by_callsign()
 
         self.make_RWC_utilisation_dataframe()
 
@@ -159,13 +161,18 @@ class HistoricResults:
             f"{self.historical_data_path}/historical_jobs_per_day_per_callsign.csv"
         )
 
-    def get_historical_jobs_per_month_per_callsign(self):
-        self.historical_jobs_per_month_per_callsign = pd.read_csv(
+    def get_historical_jobs_per_month(self):
+        self.historical_jobs_per_month = pd.read_csv(
             f"{self.historical_data_path}/historical_jobs_per_month.csv"
         )
 
-        self.historical_jobs_per_month_per_callsign["month"] = pd.to_datetime(
-            self.historical_jobs_per_month_per_callsign["month"], dayfirst=True
+        self.historical_jobs_per_month["month"] = pd.to_datetime(
+            self.historical_jobs_per_month["month"], dayfirst=True
+        )
+
+    def get_historical_monthly_totals_by_callsign(self):
+        self.historical_monthly_totals_by_callsign = pd.read_csv(
+            f"{self.historical_data_path}/historical_monthly_totals_by_callsign.csv"
         )
 
     def get_historical_activity_durations_summary(self):
