@@ -21,6 +21,7 @@ from _app_utils import (
     get_text,
     get_text_sheet,
     format_sigfigs,
+    format_diff,
 )
 
 # Workaround to deal with relative import issues
@@ -293,7 +294,7 @@ if button_run_pressed:
                         border=True,
                     )
                     missed_calls_hist_string = (
-                        historical_data.plot_historical_missed_jobs_data(
+                        historical_data.PLOT_historical_missed_jobs_data(
                             format="string"
                         )
                     )
@@ -328,255 +329,195 @@ if button_run_pressed:
             with col_ec_cc_sim:
                 st.markdown("#### Simulation Outputs")
 
-                sim_missed_cc = trial_results.get_missed_jobs_fig("CC")
-                sim_missed_ec = trial_results.get_missed_jobs_fig("EC")
-                sim_missed_all_reg = trial_results.get_missed_jobs_fig(
+                sim_missed_cc = trial_results.RETURN_missed_jobs_fig("CC")
+                sim_missed_ec = trial_results.RETURN_missed_jobs_fig("EC")
+                sim_missed_all_reg = trial_results.RETURN_missed_jobs_fig(
                     "REG"
-                ) + trial_results.get_missed_jobs_fig("REG - Helicopter Benefit")
-                sim_missed_reg_heli_benefit = trial_results.get_missed_jobs_fig(
+                ) + trial_results.RETURN_missed_jobs_fig("REG - Helicopter Benefit")
+                sim_missed_reg_heli_benefit = trial_results.RETURN_missed_jobs_fig(
                     "REG - Helicopter Benefit"
                 )
 
-    #             # ----------------------------------------------------------------------- #
+                # ----------------------------------------------------------------------- #
 
-    #             # ======= Calculate missed jobs under historical rotas/conditions ======= #
-    #             SIM_hist_params_missed_jobs = pd.read_csv(
-    #                 "historical_data/calculated/SIM_hist_params_missed_jobs_care_cat_summary.csv"
-    #             )
+                # ======= Calculate missed jobs under historical rotas/conditions ======= #
+                hist_missed_cc = historical_data.RETURN_missed_jobs_fig("CC")
+                hist_missed_ec = historical_data.RETURN_missed_jobs_fig("EC")
+                hist_missed_all_reg = historical_data.RETURN_missed_jobs_fig(
+                    "REG"
+                ) + historical_data.RETURN_missed_jobs_fig("REG - Helicopter Benefit")
+                hist_missed_reg_heli_benefit = historical_data.RETURN_missed_jobs_fig(
+                    "REG - Helicopter Benefit"
+                )
+                # ======================================================================= #
 
-    #             hist_missed_cc = get_missed_jobs_fig("CC", SIM_hist_params_missed_jobs)
-    #             hist_missed_ec = get_missed_jobs_fig("EC", SIM_hist_params_missed_jobs)
-    #             hist_missed_all_reg = get_missed_jobs_fig(
-    #                 "REG", SIM_hist_params_missed_jobs
-    #             ) + get_missed_jobs_fig(
-    #                 "REG - Helicopter Benefit", SIM_hist_params_missed_jobs
-    #             )
-    #             hist_missed_reg_heli_benefit = get_missed_jobs_fig(
-    #                 "REG - Helicopter Benefit", SIM_hist_params_missed_jobs
-    #             )
-    #             # ======================================================================= #
+                # '''''''''''' Calculate the difference '''''''''''' #
+                diff_missed_cc = sim_missed_cc - hist_missed_cc
+                diff_missed_ec = sim_missed_ec - hist_missed_ec
+                diff_missed_all_reg = sim_missed_all_reg - hist_missed_all_reg
+                diff_missed_reg_heli_benefit = (
+                    sim_missed_reg_heli_benefit - hist_missed_reg_heli_benefit
+                )
 
-    #             # '''''''''''' Calculate the difference '''''''''''' #
-    #             diff_missed_cc = sim_missed_cc - hist_missed_cc
-    #             diff_missed_ec = sim_missed_ec - hist_missed_ec
-    #             diff_missed_all_reg = sim_missed_all_reg - hist_missed_all_reg
-    #             diff_missed_reg_heli_benefit = (
-    #                 sim_missed_reg_heli_benefit - hist_missed_reg_heli_benefit
-    #             )
+                """""" """""" """""" """""" """""" """""" """""" """""" ""  #
 
-    #             def format_diff(value):
-    #                 if value > 0:
-    #                     return f"**:red[+{value:.0f}]** from historical"
-    #                 elif value < 0:
-    #                     return f"**:green[{value:.0f}]** from historical"
-    #                 else:
-    #                     return "**:gray[no difference]** from historical"
+                missed_jobs_sim_string = f"""
+    The simulation estimates that, with the proposed conditions, there would be - on average, per year - roughly
 
-    #             # '''''''''''''''''''''''''''''''''''''''''''''''''' #
+    - **{sim_missed_cc:.0f} critical care** jobs that would be missed due to no resource being available  (*{format_diff(diff_missed_cc)}*), with an estimated range of {historical_data.RETURN_missed_jobs_fig("CC", "min"):.0f} to {historical_data.RETURN_missed_jobs_fig("CC", "max"):.0f}
 
-    #             missed_jobs_sim_string = f"""
-    # The simulation estimates that, with the proposed conditions, there would be - on average, per year - roughly
+    - **{sim_missed_ec:.0f} enhanced care** jobs that would be missed due to no resource being available (*{format_diff(diff_missed_ec)}*) with an estimated range of {historical_data.RETURN_missed_jobs_fig("EC", "min"):.0f} to {historical_data.RETURN_missed_jobs_fig("EC", "max"):.0f}
 
-    # - **{sim_missed_cc:.0f} critical care** jobs that would be missed due to no resource being available  (*{format_diff(diff_missed_cc)}*), with an estimated range of {get_missed_jobs_fig("CC", missed_jobs_care_cat_summary, "min"):.0f} to {get_missed_jobs_fig("CC", missed_jobs_care_cat_summary, "max"):.0f}
+    - **{sim_missed_all_reg:.0f} jobs with no predicted CC or EC intervention** that would be missed due to no resource being available (*{format_diff(diff_missed_all_reg)}*) with an estimated range of {historical_data.RETURN_missed_jobs_fig("REG", "min") + historical_data.RETURN_missed_jobs_fig("REG - Helicopter Benefit", "min"):.0f} to {historical_data.RETURN_missed_jobs_fig("REG", "max") + historical_data.RETURN_missed_jobs_fig("REG - Helicopter Benefit", "max"):.0f}
 
-    # - **{sim_missed_ec:.0f} enhanced care** jobs that would be missed due to no resource being available (*{format_diff(diff_missed_ec)}*) with an estimated range of {get_missed_jobs_fig("EC", missed_jobs_care_cat_summary, "min"):.0f} to {get_missed_jobs_fig("EC", missed_jobs_care_cat_summary, "max"):.0f}
+        - of these missed regular jobs, **{sim_missed_reg_heli_benefit:.0f}** may have benefitted from the attendance of a helicopter (*{format_diff(diff_missed_reg_heli_benefit)}*)
+                            """
 
-    # - **{sim_missed_all_reg:.0f} jobs with no predicted CC or EC intervention** that would be missed due to no resource being available (*{format_diff(diff_missed_all_reg)}*) with an estimated range of {get_missed_jobs_fig("REG", missed_jobs_care_cat_summary, "min") + get_missed_jobs_fig("REG - Helicopter Benefit", missed_jobs_care_cat_summary, "min"):.0f} to {get_missed_jobs_fig("REG", missed_jobs_care_cat_summary, "max") + get_missed_jobs_fig("REG - Helicopter Benefit", missed_jobs_care_cat_summary, "max"):.0f}
+                st.write(missed_jobs_sim_string)
 
-    #     - of these missed regular jobs, **{sim_missed_reg_heli_benefit:.0f}** may have benefitted from the attendance of a helicopter (*{format_diff(diff_missed_reg_heli_benefit)}*)
-    #                         """
+                quarto_string += "## Missed Jobs\n\n"
+                quarto_string += missed_jobs_sim_string
 
-    #             st.write(missed_jobs_sim_string)
+            with col_ec_cc_hist_sim:
+                missed_jobs_historical_comparison = f"""
+    As CC, EC and helicopter benefit can only be determined for attended jobs, we cannot estimate the ratio for previously missed jobs.
+    However, the simulation estimates that, with historical rotas and vehicles, there would be - on average, per year - roughly
 
-    #             quarto_string += "## Missed Jobs\n\n"
-    #             quarto_string += missed_jobs_sim_string
+    - {hist_missed_cc:.0f} critical care jobs that would be missed due to no resource being available *(estimated range of {historical_data.RETURN_missed_jobs_fig("CC", "min"):.0f} to {historical_data.RETURN_missed_jobs_fig("CC", "max"):.0f})*
+    - {hist_missed_ec:.0f} enhanced care jobs that would be missed due to no resource being available *(estimated range of {historical_data.RETURN_missed_jobs_fig("EC", "min"):.0f} to {historical_data.RETURN_missed_jobs_fig("EC", "max"):.0f})*
+    - {hist_missed_all_reg:.0f} jobs with no predicted CC or EC intervention that would be missed due to no resource being available *(estimated range of {historical_data.RETURN_missed_jobs_fig("REG", "min") + historical_data.RETURN_missed_jobs_fig("REG - Helicopter Benefit", "min"):.0f} to {historical_data.RETURN_missed_jobs_fig("REG", "max") + historical_data.RETURN_missed_jobs_fig("REG - Helicopter Benefit", "max"):.0f})*
+        - of these missed regular jobs, {hist_missed_reg_heli_benefit:.0f} may have benefitted from the attendance of a helicopter *(estimated range of {historical_data.RETURN_missed_jobs_fig("REG - Helicopter Benefit", "min"):.0f} to {historical_data.RETURN_missed_jobs_fig("REG - Helicopter Benefit", "max"):.0f})*
+                            """
 
-    #         with col_ec_cc_hist_sim:
-    #             missed_jobs_historical_comparison = f"""
-    # As CC, EC and helicopter benefit can only be determined for attended jobs, we cannot estimate the ratio for previously missed jobs.
-    # However, the simulation estimates that, with historical rotas and vehicles, there would be - on average, per year - roughly
+                st.caption(missed_jobs_historical_comparison)
 
-    # - {hist_missed_cc:.0f} critical care jobs that would be missed due to no resource being available *(estimated range of {get_missed_jobs_fig("CC", SIM_hist_params_missed_jobs, "min"):.0f} to {get_missed_jobs_fig("CC", SIM_hist_params_missed_jobs, "max"):.0f})*
-    # - {hist_missed_ec:.0f} enhanced care jobs that would be missed due to no resource being available *(estimated range of {get_missed_jobs_fig("EC", SIM_hist_params_missed_jobs, "min"):.0f} to {get_missed_jobs_fig("EC", SIM_hist_params_missed_jobs, "max"):.0f})*
-    # - {hist_missed_all_reg:.0f} jobs with no predicted CC or EC intervention that would be missed due to no resource being available *(estimated range of {get_missed_jobs_fig("REG", SIM_hist_params_missed_jobs, "min") + get_missed_jobs_fig("REG - Helicopter Benefit", SIM_hist_params_missed_jobs, "min"):.0f} to {get_missed_jobs_fig("REG", SIM_hist_params_missed_jobs, "max") + get_missed_jobs_fig("REG - Helicopter Benefit", SIM_hist_params_missed_jobs, "max"):.0f})*
-    #     - of these missed regular jobs, {hist_missed_reg_heli_benefit:.0f} may have benefitted from the attendance of a helicopter *(estimated range of {get_missed_jobs_fig("REG - Helicopter Benefit", SIM_hist_params_missed_jobs, "min"):.0f} to {get_missed_jobs_fig("REG - Helicopter Benefit", SIM_hist_params_missed_jobs, "max"):.0f})*
-    #                         """
+                quarto_string += "### Historical Missed Jobs\n\n"
+                quarto_string += missed_jobs_historical_comparison
 
-    #             st.caption(missed_jobs_historical_comparison)
+            st.markdown("### Suboptimal Resource Allocation")
 
-    #             quarto_string += "### Historical Missed Jobs\n\n"
-    #             quarto_string += missed_jobs_historical_comparison
+            col_ec_cc_suboptimal_sim, col_ec_cc_suboptimal_hist_sim = st.columns(2)
 
-    #         st.markdown("### Suboptimal Resource Allocation")
+            with col_ec_cc_suboptimal_sim:
+                mean_cc_sent_ec, min_cc_sent_ec, max_cc_sent_ec = (
+                    trial_results.RETURN_prediction_cc_patients_sent_ec_resource()
+                )
 
-    #         col_ec_cc_suboptimal_sim, col_ec_cc_suboptimal_hist_sim = st.columns(2)
+                mean_heli_ben_sent_car, min_heli_ben_sent_car, max_heli_ben_sent_car = (
+                    trial_results.RETURN_prediction_heli_benefit_patients_sent_car()
+                )
 
-    #         with col_ec_cc_suboptimal_sim:
-    #             mean_cc_sent_ec, min_cc_sent_ec, max_cc_sent_ec = (
-    #                 _job_outcome_calculation.get_prediction_cc_patients_sent_ec_resource(
-    #                     results_all_runs, st.session_state.sim_duration_input
-    #                 )
-    #             )
+                mean_cc_sent_ec_HIST, min_cc_sent_ec_HIST, max_cc_sent_ec_HIST = (
+                    historical_data.RETURN_prediction_cc_patients_sent_ec_resource()
+                )
 
-    #             mean_heli_ben_sent_car, min_heli_ben_sent_car, max_heli_ben_sent_car = (
-    #                 _job_outcome_calculation.get_prediction_heli_benefit_patients_sent_car(
-    #                     results_all_runs, st.session_state.sim_duration_input
-    #                 )
-    #             )
+                (
+                    mean_heli_ben_sent_car_HIST,
+                    min_heli_ben_sent_car_HIST,
+                    max_heli_ben_sent_car_HIST,
+                ) = historical_data.RETURN_prediction_heli_benefit_patients_sent_car()
 
-    #             # SIM_hist_complete = pd.read_csv("historical_data/calculated/SIM_hist_params.csv")
+                suboptimal_jobs_sim_string = f"""
+                The simulation estimates that, with the proposed conditions, there would be - on average, per year - roughly
 
-    #             sim_hist_suboptimal_care_cat_summary = pd.read_csv(
-    #                 "historical_data/calculated/SIM_hist_params_suboptimal_care_cat_sent_summary.csv"
-    #             )
-    #             sim_hist_suboptimal_vehicle_type_summary = pd.read_csv(
-    #                 "historical_data/calculated/SIM_hist_params_suboptimal_vehicle_type_sent_summary.csv"
-    #             )
+                - **{mean_cc_sent_ec:.0f} critical care (CC)** jobs that would be sent an enhanced care (EC) resource (*{format_diff(mean_cc_sent_ec - mean_cc_sent_ec_HIST)}*), with an estimated range of {min_cc_sent_ec:.0f} to {max_cc_sent_ec:.0f}
 
-    #             mean_cc_sent_ec_HIST, min_cc_sent_ec_HIST, max_cc_sent_ec_HIST = (
-    #                 _job_outcome_calculation.get_prediction_cc_patients_sent_ec_resource(
-    #                     sim_hist_suboptimal_care_cat_summary,
-    #                     730,
-    #                     summarised_df_provided=True,
-    #                 )
-    #             )  # TODO - fix hardcoded param which may change
+                - **{mean_heli_ben_sent_car:.0f} jobs that would benefit from a helicopter** that would be sent a car (*{format_diff(mean_heli_ben_sent_car - mean_heli_ben_sent_car_HIST)}*) with an estimated range of {min_heli_ben_sent_car:.0f} to {max_heli_ben_sent_car:.0f}
+                """
 
-    #             (
-    #                 mean_heli_ben_sent_car_HIST,
-    #                 min_heli_ben_sent_car_HIST,
-    #                 max_heli_ben_sent_car_HIST,
-    #             ) = _job_outcome_calculation.get_prediction_heli_benefit_patients_sent_car(
-    #                 sim_hist_suboptimal_vehicle_type_summary,
-    #                 730,
-    #                 summarised_df_provided=True,
-    #             )  # TODO - fix hardcoded param which may change
+                st.write(suboptimal_jobs_sim_string)
 
-    #             suboptimal_jobs_sim_string = f"""
-    #             The simulation estimates that, with the proposed conditions, there would be - on average, per year - roughly
+                quarto_string += "## Suboptimal Resource Allocation to Jobs\n\n"
+                quarto_string += suboptimal_jobs_sim_string
 
-    #             - **{mean_cc_sent_ec:.0f} critical care (CC)** jobs that would be sent an enhanced care (EC) resource (*{format_diff(mean_cc_sent_ec - mean_cc_sent_ec_HIST)}*), with an estimated range of {min_cc_sent_ec:.0f} to {max_cc_sent_ec:.0f}
+            with col_ec_cc_suboptimal_hist_sim:
+                suboptimal_jobs_hist_string = f"""
+                As CC, EC and helicopter benefit can only be determined for attended jobs, we cannot estimate the ratio for previously missed jobs.
+                However, the simulation estimates that, with historical rotas and vehicles, there would be - on average, per year - roughly
 
-    #             - **{mean_heli_ben_sent_car:.0f} jobs that would benefit from a helicopter** that would be sent a car (*{format_diff(mean_heli_ben_sent_car - mean_heli_ben_sent_car_HIST)}*) with an estimated range of {min_heli_ben_sent_car:.0f} to {max_heli_ben_sent_car:.0f}
-    #             """
+                - **{mean_cc_sent_ec_HIST:.0f} critical care (CC)** jobs that would be sent an enhanced care (EC) resource, with an estimated range of {min_cc_sent_ec_HIST:.0f} to {max_cc_sent_ec_HIST:.0f}
 
-    #             st.write(suboptimal_jobs_sim_string)
+                - **{mean_heli_ben_sent_car_HIST:.0f} jobs that would benefit from a helicopter** that would be sent a car, with an estimated range of {min_heli_ben_sent_car_HIST:.0f} to {max_heli_ben_sent_car_HIST:.0f}
+                """
+                st.write(suboptimal_jobs_hist_string)
 
-    #             quarto_string += "## Suboptimal Resource Allocation to Jobs\n\n"
-    #             quarto_string += suboptimal_jobs_sim_string
+                quarto_string += "## Suboptimal Resource Allocation to Jobs - Historical Comparison\n\n"
+                quarto_string += suboptimal_jobs_hist_string
 
-    #         with col_ec_cc_suboptimal_hist_sim:
-    #             suboptimal_jobs_hist_string = f"""
-    #             As CC, EC and helicopter benefit can only be determined for attended jobs, we cannot estimate the ratio for previously missed jobs.
-    #             However, the simulation estimates that, with historical rotas and vehicles, there would be - on average, per year - roughly
+            st.subheader("Resource Utilisation")
 
-    #             - **{mean_cc_sent_ec_HIST:.0f} critical care (CC)** jobs that would be sent an enhanced care (EC) resource, with an estimated range of {min_cc_sent_ec_HIST:.0f} to {max_cc_sent_ec_HIST:.0f}
+            quarto_string += "\n\n## Resource Utilisation"
 
-    #             - **{mean_heli_ben_sent_car_HIST:.0f} jobs that would benefit from a helicopter** that would be sent a car, with an estimated range of {min_heli_ben_sent_car_HIST:.0f} to {max_heli_ben_sent_car_HIST:.0f}
-    #             """
-    #             st.write(suboptimal_jobs_hist_string)
+            # Get unique callsigns for helicopters and cars from run_results
+            if (
+                "vehicle_type" in trial_results.run_results.columns
+                and "callsign" in trial_results.run_results.columns
+            ):
+                all_helicopter_callsigns = sorted(
+                    list(
+                        trial_results.run_results[
+                            trial_results.run_results["vehicle_type"] == "helicopter"
+                        ]["callsign"]
+                        .dropna()
+                        .unique()
+                    )
+                )
+                all_car_callsigns = sorted(
+                    list(
+                        trial_results.run_results[
+                            trial_results.run_results["vehicle_type"] == "car"
+                        ]["callsign"]
+                        .dropna()
+                        .unique()
+                    )
+                )
+            else:
+                st.error(
+                    "The 'run_results' DataFrame is missing 'vehicle_type' or 'callsign' columns."
+                )
+                all_helicopter_callsigns = []
+                all_car_callsigns = []
 
-    #             quarto_string += "## Suboptimal Resource Allocation to Jobs - Historical Comparison\n\n"
-    #             quarto_string += suboptimal_jobs_hist_string
+            # --- Display Helicopter Metrics ---
+            st.markdown("### Helicopters")
+            if all_helicopter_callsigns:
+                helo_cols = st.columns(len(all_helicopter_callsigns))
+                for idx, helo_callsign in enumerate(all_helicopter_callsigns):
+                    quarto_string = trial_results.display_vehicle_utilisation_metric(
+                        st_column=helo_cols[idx],
+                        callsign_to_display=helo_callsign,
+                        vehicle_type_label="Helicopter",
+                        icon_unicode="f60c",
+                        historical_data_class=historical_data,
+                        current_quarto_string=quarto_string,
+                    )
+            else:
+                st.info("No helicopter data found in the current run results.")
 
-    #         st.subheader("Resource Utilisation")
+            st.caption(get_text("helicopter_utilisation_description", text_df))
+            st.divider()
 
-    #         quarto_string += "\n\n## Resource Utilisation"
-    #         (
-    #             resource_use_wide,
-    #             utilisation_df_overall,
-    #             utilisation_df_per_run,
-    #             utilisation_df_per_run_by_csg,
-    #         ) = _utilisation_result_calculation.make_utilisation_model_dataframe(
-    #             path="data/run_results.csv",
-    #             params_path="data/run_params_used.csv",
-    #             service_path="data/service_dates.csv",
-    #             callsign_path="actual_data/callsign_registration_lookup.csv",
-    #             rota_path="actual_data/HEMS_ROTA.csv",
-    #             rota_times="actual_data/rota_start_end_months.csv",
-    #         )
+            # --- Display Car Metrics ---
+            st.markdown("### Cars")
+            if all_car_callsigns:
+                car_metric_cols = st.columns(len(all_car_callsigns))
+                for idx, car_callsign in enumerate(all_car_callsigns):
+                    quarto_string = trial_results.display_vehicle_utilisation_metric(
+                        historical_data_class=historical_data,
+                        st_column=car_metric_cols[idx],
+                        callsign_to_display=car_callsign,
+                        vehicle_type_label="Car",
+                        icon_unicode="eb3c",
+                        current_quarto_string=quarto_string,
+                    )
+            else:
+                st.info("No car data found in the current run results.")
 
-    #         print(utilisation_df_overall)
+            # Display a description for car utilisation
+            # st.caption(get_text("car_utilisation_description", text_df))
+            # st.divider() # If you add a caption above, a divider might be good here too.
 
-    #         # Get unique callsigns for helicopters and cars from run_results
-    #         if (
-    #             "vehicle_type" in results_all_runs.columns
-    #             and "callsign" in results_all_runs.columns
-    #         ):
-    #             all_helicopter_callsigns = sorted(
-    #                 list(
-    #                     results_all_runs[
-    #                         results_all_runs["vehicle_type"] == "helicopter"
-    #                     ]["callsign"]
-    #                     .dropna()
-    #                     .unique()
-    #                 )
-    #             )
-    #             all_car_callsigns = sorted(
-    #                 list(
-    #                     results_all_runs[results_all_runs["vehicle_type"] == "car"][
-    #                         "callsign"
-    #                     ]
-    #                     .dropna()
-    #                     .unique()
-    #                 )
-    #             )
-    #         else:
-    #             st.error(
-    #                 "The 'run_results' DataFrame is missing 'vehicle_type' or 'callsign' columns."
-    #             )
-    #             all_helicopter_callsigns = []
-    #             all_car_callsigns = []
-
-    #         # --- Display Helicopter Metrics ---
-    #         st.markdown("### Helicopters")
-    #         if all_helicopter_callsigns:
-    #             helo_cols = st.columns(len(all_helicopter_callsigns))
-    #             for idx, helo_callsign in enumerate(all_helicopter_callsigns):
-    #                 quarto_string = _utilisation_result_calculation.display_vehicle_utilisation_metric(
-    #                     st_column=helo_cols[idx],
-    #                     callsign_to_display=helo_callsign,
-    #                     vehicle_type_label="Helicopter",
-    #                     icon_unicode="f60c",
-    #                     sim_utilisation_df=utilisation_df_overall,
-    #                     hist_summary_df=historical_utilisation_df_summary,
-    #                     util_calc_module=_utilisation_result_calculation,
-    #                     current_quarto_string=quarto_string,
-    #                 )
-    #         else:
-    #             st.info("No helicopter data found in the current run results.")
-
-    #         st.caption(get_text("helicopter_utilisation_description", text_df))
-    #         st.divider()
-
-    #         # --- Display Car Metrics ---
-    #         st.markdown("### Cars")
-    #         if all_car_callsigns:
-    #             # Your original line for index manipulation.
-    #             # Ensure this is necessary or adapt if callsigns in historical_utilisation_df_summary match directly
-    #             # or if the get_hist_util_fig function handles the "CC" prefix.
-    #             # For the mock, get_hist_util_fig handles "CC" to "C" transformation.
-    #             # historical_utilisation_df_summary.index = historical_utilisation_df_summary.index.str.replace("CC", "C")
-
-    #             car_metric_cols = st.columns(len(all_car_callsigns))
-    #             for idx, car_callsign in enumerate(all_car_callsigns):
-    #                 quarto_string = _utilisation_result_calculation.display_vehicle_utilisation_metric(
-    #                     st_column=car_metric_cols[idx],
-    #                     callsign_to_display=car_callsign,
-    #                     vehicle_type_label="Car",
-    #                     icon_unicode="eb3c",
-    #                     sim_utilisation_df=utilisation_df_overall,
-    #                     hist_summary_df=historical_utilisation_df_summary,
-    #                     util_calc_module=_utilisation_result_calculation,
-    #                     current_quarto_string=quarto_string,
-    #                 )
-    #         else:
-    #             st.info("No car data found in the current run results.")
-
-    #         # Display a description for car utilisation
-    #         # st.caption(get_text("car_utilisation_description", text_df))
-    #         # st.divider() # If you add a caption above, a divider might be good here too.
-
-    #         t1_col3, t1_col4 = st.columns(2)
+            t1_col3, t1_col4 = st.columns(2)
 
 #         with tab2:
 #             tab_2_1, tab_2_2, tab_2_3, tab_2_4, tab_2_5 = st.tabs(

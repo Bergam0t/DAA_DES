@@ -7,6 +7,16 @@ import platform
 from datetime import datetime
 import calendar
 
+
+def format_diff(value):
+    if value > 0:
+        return f"**:red[+{value:.0f}]** from historical"
+    elif value < 0:
+        return f"**:green[{value:.0f}]** from historical"
+    else:
+        return "**:gray[no difference]** from historical"
+
+
 # Mapping months to numbers
 MONTH_MAPPING = {
     "January": 1,

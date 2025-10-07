@@ -2728,6 +2728,9 @@ class DistributionFitUtils:
             results_all_runs = pd.read_csv("data/run_results.csv")
             # results_all_runs.to_csv("historical_data/calculated/SIM_hist_params.csv", index=False)
 
+            # save parameters used
+            # TODO: Add saving of parameters used
+
             # save data of counts of suboptimal care category sent
             counts_df = (
                 results_all_runs[results_all_runs["event_type"] == "resource_use"][

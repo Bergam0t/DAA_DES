@@ -1,10 +1,19 @@
 import pandas as pd
+import re
 
-def make_callsign_column(dataframe):
-    dataframe['callsign'] = dataframe['vehicle_type'].str[0].str.upper() + dataframe['callsign_group'].fillna(0).astype(int).astype(str)
-    return dataframe
 
-def calculate_time_difference(df, col1, col2, unit='minutes'):
+# def make_callsign_column(dataframe):
+#     dataframe["callsign"] = dataframe["vehicle_type"].str[0].str.upper() + dataframe[
+#         "callsign_group"
+#     ].fillna(0).astype(int).astype(str)
+#     dataframe["callsign"] = dataframe["callsign"].apply(
+#         lambda x: re.sub(r"^(?<!C)C(?=\d{2}$)", "CC", x)
+#     )
+
+#     return dataframe
+
+
+def calculate_time_difference(df, col1, col2, unit="minutes"):
     """
     Calculate the time difference between two datetime columns in a Pandas DataFrame.
     *AI PRODUCED FUNCTION - CHECKED FOR CORRECT FUNCTIONING*
@@ -19,26 +28,30 @@ def calculate_time_difference(df, col1, col2, unit='minutes'):
         pd.Series: A Pandas Series with the time differences in the specified unit.
     """
     # Convert columns to datetime format
-    df[col1] = pd.to_datetime(df[col1], format='ISO8601')
-    df[col2] = pd.to_datetime(df[col2], format='ISO8601')
+    df[col1] = pd.to_datetime(df[col1], format="ISO8601")
+    df[col2] = pd.to_datetime(df[col2], format="ISO8601")
 
     # Compute time difference
     time_diff = df[col2] - df[col1]
 
     # Convert to specified unit
-    if unit == 'seconds':
+    if unit == "seconds":
         return time_diff.dt.total_seconds()
-    elif unit == 'minutes':
+    elif unit == "minutes":
         return time_diff.dt.total_seconds() / 60
-    elif unit == 'hours':
+    elif unit == "hours":
         return time_diff.dt.total_seconds() / 3600
-    elif unit == 'days':
+    elif unit == "days":
         return time_diff.dt.total_seconds() / 86400
     else:
-        raise ValueError("Invalid unit. Choose from 'seconds', 'minutes', 'hours', or 'days'.")
+        raise ValueError(
+            "Invalid unit. Choose from 'seconds', 'minutes', 'hours', or 'days'."
+        )
+
 
 def get_param(parameter, params_df):
-    return params_df[params_df["parameter"] == parameter]['value'].values[0]
+    return params_df[params_df["parameter"] == parameter]["value"].values[0]
+
 
 def fill_missing_values(df, column, value):
     """

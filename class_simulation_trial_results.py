@@ -110,25 +110,6 @@ class TrialResults:
         self, simulation_inputs, run_results: pd.DataFrame, historical_data=None
     ):
         self.run_results = run_results
-        self.run_results = _processing_functions.make_callsign_column(self.run_results)
-
-        self.run_results["timestamp_dt"] = pd.to_datetime(
-            self.run_results["timestamp_dt"], format="ISO8601"
-        )
-
-        # Extract month from datetime
-        self.run_results["month"] = self.run_results["timestamp_dt"].dt.strftime(
-            "%B"
-        )  # e.g., 'January', 'February'
-
-        # Set fixed order for months
-        self.month_order = (
-            pd.date_range("2000-01-01", periods=12, freq="MS").strftime("%B").tolist()
-        )
-
-        self.run_results["month"] = pd.Categorical(
-            self.run_results["month"], categories=self.month_order, ordered=True
-        )
 
         self.resource_use_events_only_df = self.run_results[
             self.run_results["event_type"].isin(["resource_use", "resource_use_end"])
@@ -169,6 +150,11 @@ class TrialResults:
 
         self.sim_averages_utilisation = None
 
+        # Set fixed order for months
+        self.month_order = (
+            pd.date_range("2000-01-01", periods=12, freq="MS").strftime("%B").tolist()
+        )
+
         # Create a lookup dict to ensure formatting of weekday is consistent across simulated
         # and historical datasets
         self.day_dict = {
@@ -181,7 +167,7 @@ class TrialResults:
             "Sun": "Sunday",
         }
 
-        # Create a list to ensure days of the week are displayed in the correct order in plot
+        # Create a list to ensure days of the week are displayed in the correct order in plots
         self.day_order = [
             "Monday",
             "Tuesday",
@@ -192,6 +178,8 @@ class TrialResults:
             "Sunday",
         ]
 
+        # Add extra useful columns to run results
+        self.enhance_run_results()
         # Create self.call_df
         self.make_job_count_df()
         # Create self.hourly_calls_per_run
@@ -217,8 +205,26 @@ class TrialResults:
             ),
         )
 
+        self.make_utilisation_model_dataframe()
+
         self.get_missed_call_df()
         self.prep_util_df_from_call_df()
+
+    def enhance_run_results(self):
+        # self.run_results = _processing_functions.make_callsign_column(self.run_results)
+
+        self.run_results["timestamp_dt"] = pd.to_datetime(
+            self.run_results["timestamp_dt"], format="ISO8601"
+        )
+
+        # Extract month from datetime
+        self.run_results["month"] = self.run_results["timestamp_dt"].dt.strftime(
+            "%B"
+        )  # e.g., 'January', 'February'
+
+        self.run_results["month"] = pd.Categorical(
+            self.run_results["month"], categories=self.month_order, ordered=True
+        )
 
     def resource_allocation_outcomes(self):
         self.resource_allocation_outcomes_df = (
@@ -237,7 +243,7 @@ class TrialResults:
             .rename(columns={"time_type": "Resource Allocation Attempt Outcome"})
         )
 
-    def calculate_available_hours_v2(self, summer_start=4, summer_end=9):
+    def calculate_available_hours_v2(self, summer_start, summer_end):
         """
         Version of a function to calculate the number of hours a resource is available for use
         across the duration of the simulation, based on the rota used during the period, accounting
@@ -455,6 +461,9 @@ class TrialResults:
         self.utilisation_df_per_run = self.resource_use_wide.groupby(
             ["run_number", "vehicle_type", "callsign"]
         )[["resource_use_duration"]].sum()
+
+        print(self.total_avail_minutes)
+        print(self.utilisation_df_per_run)
 
         # Join with df of how long each resource was available for in the sim
         # We will for now assume this is the same across each run
@@ -2236,7 +2245,7 @@ class TrialResults:
 
     def summarise_event_times(self):
         self.simulation_event_duration_df_summary = (
-            self.simulation_event_duration_df.groupby("time_type")[
+            self.simulation_event_duration_df.groupby("time_type", observed=False)[
                 "time_elapsed_minutes"
             ]
             .agg(["mean", "median", "max", "min"])
@@ -2777,13 +2786,12 @@ class TrialResults:
     # TODO: convert to use historical class
     # --- Helper function to display vehicle metric ---
     def display_vehicle_utilisation_metric(
+        self,
+        historical_data_class,
         st_column,
         callsign_to_display,
         vehicle_type_label,
         icon_unicode,
-        sim_utilisation_df,
-        hist_summary_df,
-        util_calc_module,
         current_quarto_string,
     ):
         """
@@ -2791,14 +2799,20 @@ class TrialResults:
         Returns the updated quarto_string.
         """
         with st_column:
+            print(self.utilisation_df_overall)
             with iconMetricContainer(
                 key=f"{vehicle_type_label.lower()}_util_{callsign_to_display}",
                 icon_unicode=icon_unicode,
                 type="symbols",
             ):
-                matched_sim = sim_utilisation_df[
-                    sim_utilisation_df["callsign"] == callsign_to_display
+                matched_sim = self.utilisation_df_overall[
+                    self.utilisation_df_overall["callsign"] == callsign_to_display
                 ]
+
+                print(callsign_to_display)
+                print(self.utilisation_df_overall["callsign"].unique())
+                print(matched_sim)
+
                 if not matched_sim.empty:
                     sim_util_fig = matched_sim["PRINT_perc"].values[0]
                     sim_util_display = f"{sim_util_fig}"
@@ -2815,9 +2829,10 @@ class TrialResults:
                 )
 
             # Get historical data
-            hist_util_value = util_calc_module.get_hist_util_fig(
-                hist_summary_df, callsign_to_display, "mean"
+            hist_util_value = historical_data_class.RETURN_hist_util_fig(
+                callsign_to_display, "mean"
             )
+
             hist_util_value_display = (
                 f"{hist_util_value}%"
                 if isinstance(hist_util_value, (int, float))
@@ -3506,7 +3521,7 @@ class TrialResults:
                         service_schedule["service_end_date"]
                         - service_schedule["service_start_date"]
                     )
-                    + timedelta(days=1)
+                    + datetime.timedelta(days=1)
                 ).dt.total_seconds() * 1000
 
                 service_schedule["duration_days"] = (
@@ -4050,7 +4065,7 @@ class TrialResults:
 
         return fig
 
-    def get_prediction_cc_patients_sent_ec_resource(self):
+    def RETURN_prediction_cc_patients_sent_ec_resource(self) -> tuple:
         counts_df = (
             self.run_results[self.run_results["event_type"] == "resource_use"][
                 ["run_number", "hems_res_category", "care_cat"]
@@ -4070,14 +4085,17 @@ class TrialResults:
             & (counts_df_summary["care_cat"] == "CC")
         ]
 
-        return (
-            (row_of_interest["mean"].values[0] / self.params_df.run_duration_days)
-            * 365,
-            (row_of_interest["min"].values[0] / self.params_df.run_duration_days) * 365,
-            (row_of_interest["max"].values[0] / self.params_df.run_duration_days) * 365,
+        run_duration_days = float(
+            _processing_functions.get_param("sim_duration_days", self.params_df)
         )
 
-    def get_prediction_heli_benefit_patients_sent_car(self):
+        return (
+            (row_of_interest["mean"].values[0] / run_duration_days) * 365,
+            (row_of_interest["min"].values[0] / run_duration_days) * 365,
+            (row_of_interest["max"].values[0] / run_duration_days) * 365,
+        )
+
+    def RETURN_prediction_heli_benefit_patients_sent_car(self) -> tuple:
         counts_df = (
             self.run_results[self.run_results["event_type"] == "resource_use"][
                 ["run_number", "vehicle_type", "heli_benefit"]
@@ -4097,11 +4115,14 @@ class TrialResults:
             & (counts_df_summary["heli_benefit"] == "y")
         ]
 
+        run_duration_days = float(
+            _processing_functions.get_param("sim_duration_days", self.params_df)
+        )
+
         return (
-            (row_of_interest["mean"].values[0] / self.params_df.run_duration_days)
-            * 365,
-            (row_of_interest["min"].values[0] / self.params_df.run_duration_days) * 365,
-            (row_of_interest["max"].values[0] / self.params_df.run_duration_days) * 365,
+            (row_of_interest["mean"].values[0] / run_duration_days) * 365,
+            (row_of_interest["min"].values[0] / run_duration_days) * 365,
+            (row_of_interest["max"].values[0] / run_duration_days) * 365,
         )
 
     # TODO: Find out what the two input dataframes are
@@ -4228,7 +4249,7 @@ class TrialResults:
 
         return fig
 
-    def get_missed_jobs_fig(self, care_category, what="average"):
+    def RETURN_missed_jobs_fig(self, care_category, what="average"):
         row = self.missed_jobs_per_run_care_cat_summary[
             (self.missed_jobs_per_run_care_cat_summary["care_cat"] == care_category)
             & (

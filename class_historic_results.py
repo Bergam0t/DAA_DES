@@ -1,5 +1,7 @@
 import pandas as pd
 import plotly.express as px
+from plotly.graph_objects import Figure
+import _processing_functions
 
 
 class HistoricResults:
@@ -30,13 +32,14 @@ class HistoricResults:
         self.historical_jobs_per_day_per_callsign = None
 
         # Care categories
-        self.historical_care_cat_counts = None
+        self.care_cat_by_hour_historic = None
 
         # Activity durations
         self.historical_activity_durations_summary = None
         self.historical_activity_durations_breakdown = None
 
         # Utilisation (recorded)
+        self.historical_monthly_resource_utilisation = None
 
         # Utilisation (calculated)
         self.historical_utilisation_df_complete = None
@@ -50,6 +53,48 @@ class HistoricResults:
         self.historic_rota_df = pd.read_csv(self.historic_rota_df_path)
         self.historic_callsign_df = pd.read_csv(self.historic_callsign_df_path)
         self.historic_servicing_df = pd.read_csv(self.historic_servicing_df_path)
+
+        # Calculated/simulated historical comparisons
+        self.SIM_hist_params_missed_jobs = None
+        self.SIM_hist_suboptimal_care_cat_summary = None
+        self.SIM_hist_suboptimal_vehicle_type_summary = None
+        self.SIM_historical_params_df = None
+
+        self.get_SIM_hist_params_missed_jobs_df()
+        self.get_SIM_hist_suboptimal_care_cat_summary_df()
+        self.get_SIM_hist_suboptimal_vehicle_type_summary_df()
+        self.get_SIM_hist_params()
+
+        self.get_historical_attendance_df()
+        self.get_historical_missed_calls_by_hour()
+        self.get_historical_monthly_resource_utilisation()
+        self.get_historical_missed_calls_by_quarter_and_hour()
+        self.get_care_cat_by_hour_historic()
+        self.get_historical_jobs_per_day_per_callsign()
+        self.get_historical_jobs_per_month_per_callsign()
+        self.get_historical_activity_durations_summary()
+
+        self.make_RWC_utilisation_dataframe()
+
+    def get_SIM_hist_params(self):
+        self.SIM_hist_params = pd.read_csv(
+            f"{self.historical_data_path}/calculated/run_params_used.csv"
+        )
+
+    def get_SIM_hist_params_missed_jobs_df(self):
+        self.SIM_hist_params_missed_jobs = pd.read_csv(
+            f"{self.historical_data_path}/calculated/SIM_hist_params_missed_jobs_care_cat_summary.csv"
+        )
+
+    def get_SIM_hist_suboptimal_care_cat_summary_df(self):
+        self.SIM_hist_suboptimal_care_cat_summary = pd.read_csv(
+            f"{self.historical_data_path}/calculated/SIM_hist_params_suboptimal_care_cat_sent_summary.csv"
+        )
+
+    def get_SIM_hist_suboptimal_vehicle_type_summary_df(self):
+        self.SIM_hist_suboptimal_vehicle_type_summary = pd.read_csv(
+            f"{self.historical_data_path}/calculated/SIM_hist_params_suboptimal_vehicle_type_sent_summary.csv"
+        )
 
     def get_historical_attendance_df(self):
         self.historical_attendance_df = pd.read_csv(
@@ -96,7 +141,7 @@ class HistoricResults:
         )
 
     def get_care_cat_by_hour_historic(self):
-        self.historical_care_cat_counts = pd.read_csv(
+        self.care_cat_by_hour_historic = pd.read_csv(
             f"{self.historical_data_path}/historical_care_cat_counts.csv"
         )
 
@@ -116,7 +161,7 @@ class HistoricResults:
 
     def get_historical_jobs_per_month_per_callsign(self):
         self.historical_jobs_per_month_per_callsign = pd.read_csv(
-            f"{self.historical_data_path}/historical_jobs_per_month_by_callsign.csv"
+            f"{self.historical_data_path}/historical_jobs_per_month.csv"
         )
 
         self.historical_jobs_per_month_per_callsign["month"] = pd.to_datetime(
@@ -138,119 +183,6 @@ class HistoricResults:
         self.historical_activity_durations_breakdown = pd.read_csv(
             f"{self.historical_data_path}/historical_job_durations_breakdown.csv"
         )
-
-    def plot_historical_missed_jobs_data(self, format="stacked_bar"):
-        if self.historical_attendance_df is None:
-            try:
-                self.get_historical_attendance_df()
-            except FileNotFoundError:
-                raise (
-                    "Historical attendance df not found. Please run the method get_historical_attendance_df(),"
-                    "passiing in the path to the historical data on missed calls per month"
-                )
-        if format == "stacked_bar":
-            return px.bar(
-                self.historical_attendance_df[
-                    ["month", "jobs_not_attended", "jobs_attended"]
-                ].melt(id_vars="month"),
-                x="month",
-                y="value",
-                color="variable",
-            )
-
-        elif format == "line_not_attended_count":
-            return px.line(
-                self.historical_attendance_df, x="month", y="jobs_not_attended"
-            )
-
-        elif format == "line_not_attended_perc":
-            return px.line(
-                self.historical_attendance_df, x="month", y="perc_unattended_historical"
-            )
-
-        elif format == "string":
-            # This approach can distort the result by giving more weight to months with higher numbers of calls
-            # However, for system-level performance, which is what we care about here, it's a reasonable option
-            all_received_calls_period = self.historical_attendance_df[
-                "all_received_calls"
-            ].sum()
-            all_attended_jobs_period = self.historical_attendance_df[
-                "jobs_attended"
-            ].sum()
-            return (
-                (all_received_calls_period - all_attended_jobs_period)
-                / all_received_calls_period
-            ) * 100
-
-            # Alternative is to take the mean of means
-            # return full_jobs_df['perc_unattended_historical'].mean()*100
-
-        else:
-            # Melt the DataFrame to long format
-            df_melted = self.historical_attendance_df[
-                ["month", "jobs_not_attended", "jobs_attended"]
-            ].melt(id_vars="month")
-
-            # Calculate proportions per month
-            df_melted["proportion"] = df_melted.groupby("month")["value"].transform(
-                lambda x: x / x.sum()
-            )
-
-            # Plot proportions
-            fig = px.bar(
-                df_melted,
-                x="month",
-                y="proportion",
-                color="variable",
-                text="value",  # Optional: to still show raw values on hover
-            )
-
-            fig.update_layout(
-                barmode="stack", yaxis_tickformat=".0%", yaxis_title="Proportion"
-            )
-            fig.show()
-
-    def get_care_cat_counts_plot_historic(self, show_proportions=False):
-        title = "Care Category of calls in historical data by hour of day with EC/CC/Regular - Heli Benefit/Regular"
-
-        if not show_proportions:
-            fig = px.bar(
-                self.care_cat_by_hour_historic,
-                x="hour",
-                y="count",
-                color="care_category",
-                title=title,
-                category_orders={
-                    "care_category": [
-                        "CC",
-                        "EC",
-                        "REG - helicopter benefit",
-                        "REG",
-                        "Unknown - DAA resource did not attend",
-                    ]
-                },
-            )
-        else:
-            fig = px.bar(
-                self.care_cat_by_hour_historic,
-                x="hour",
-                y="proportion",
-                color="care_category",
-                title=title,
-                category_orders={
-                    "care_category": [
-                        "CC",
-                        "EC",
-                        "REG - helicopter benefit",
-                        "REG",
-                        "Unknown - DAA resource did not attend",
-                    ]
-                },
-            )
-
-        fig.update_layout(xaxis=dict(dtick=1))
-
-        return fig
 
     def make_RWC_utilisation_dataframe(
         self,
@@ -384,10 +316,11 @@ class HistoricResults:
             return theoretical_availability_df
 
         theoretical_availability_df = calculate_theoretical_time(
-            historical_df=self.historical_monthly_resource_utilisation_df,
+            historical_df=self.historical_monthly_resource_utilisation,
             rota_df=self.historic_rota_df,
             callsign_df=self.historic_callsign_df,
             service_df=self.historic_servicing_df,
+            historical_monthly_resource_utilisation_df=self.historical_monthly_resource_utilisation,
             long_format_df=True,
         )
 
@@ -400,7 +333,7 @@ class HistoricResults:
         # theoretical_availability_df.to_csv("historical_data/calculated/theoretical_availability_historical.csv")
 
         historical_utilisation_df_times = (
-            self.historical_monthly_resource_utilisation_df.set_index("month")
+            self.historical_monthly_resource_utilisation.set_index("month")
             .filter(like="total_time")
             .reset_index()
         )
@@ -416,59 +349,153 @@ class HistoricResults:
 
         historical_utilisation_df_times = historical_utilisation_df_times.fillna(0)
 
-        # print(historical_utilisation_df_times)
-        # print(theoretical_availability_df)
-
-        historical_utilisation_df_complete = pd.merge(
+        self.historical_utilisation_df_complete = pd.merge(
             left=historical_utilisation_df_times,
             right=theoretical_availability_df,
             on=["callsign", "month"],
             how="left",
         )
 
-        historical_utilisation_df_complete["percentage_utilisation"] = (
-            historical_utilisation_df_complete["usage"]
-            / historical_utilisation_df_complete["theoretical_availability"]
+        self.historical_utilisation_df_complete["percentage_utilisation"] = (
+            self.historical_utilisation_df_complete["usage"]
+            / self.historical_utilisation_df_complete["theoretical_availability"]
         )
 
-        historical_utilisation_df_complete["percentage_utilisation_display"] = (
-            historical_utilisation_df_complete["percentage_utilisation"].apply(
+        self.historical_utilisation_df_complete["percentage_utilisation_display"] = (
+            self.historical_utilisation_df_complete["percentage_utilisation"].apply(
                 lambda x: f"{x:.1%}"
             )
         )
 
-        historical_utilisation_df_complete.to_csv(
+        self.historical_utilisation_df_complete.to_csv(
             "historical_data/calculated/complete_utilisation_historical.csv"
         )
 
-        historical_utilisation_df_summary = (
-            historical_utilisation_df_complete.groupby("callsign")[
+        self.historical_utilisation_df_summary = (
+            self.historical_utilisation_df_complete.groupby("callsign")[
                 "percentage_utilisation"
             ].agg(["min", "max", "mean", "median"])
             * 100
         ).round(1)
 
-        historical_utilisation_df_summary.to_csv(
+        self.historical_utilisation_df_summary.to_csv(
             "historical_data/calculated/complete_utilisation_historical_summary.csv"
         )
 
-        # print("==historical_utilisation_df_complete==")
-        # print(historical_utilisation_df_complete)
+    def PLOT_historical_missed_jobs_data(self, format="stacked_bar") -> Figure:
+        if self.historical_attendance_df is None:
+            try:
+                self.get_historical_attendance_df()
+            except FileNotFoundError:
+                raise (
+                    "Historical attendance df not found. Please run the method get_historical_attendance_df(),"
+                    "passiing in the path to the historical data on missed calls per month"
+                )
+        if format == "stacked_bar":
+            return px.bar(
+                self.historical_attendance_df[
+                    ["month", "jobs_not_attended", "jobs_attended"]
+                ].melt(id_vars="month"),
+                x="month",
+                y="value",
+                color="variable",
+            )
 
-        # print("==historical_utilisation_df_summary==")
-        # print(historical_utilisation_df_summary)
+        elif format == "line_not_attended_count":
+            return px.line(
+                self.historical_attendance_df, x="month", y="jobs_not_attended"
+            )
 
-        self.historical_utilisation_df_complete
-        self.historical_utilisation_df_summary
+        elif format == "line_not_attended_perc":
+            return px.line(
+                self.historical_attendance_df, x="month", y="perc_unattended_historical"
+            )
 
-    def get_hist_util_fig(
-        historical_utilisation_df_summary, callsign="H70", average="mean"
-    ):
-        return historical_utilisation_df_summary[
-            historical_utilisation_df_summary.index == callsign
-        ][average].values[0]
+        elif format == "string":
+            # This approach can distort the result by giving more weight to months with higher numbers of calls
+            # However, for system-level performance, which is what we care about here, it's a reasonable option
+            all_received_calls_period = self.historical_attendance_df[
+                "all_received_calls"
+            ].sum()
+            all_attended_jobs_period = self.historical_attendance_df[
+                "jobs_attended"
+            ].sum()
+            return (
+                (all_received_calls_period - all_attended_jobs_period)
+                / all_received_calls_period
+            ) * 100
 
-    def make_RWC_utilisation_plot(self):
+            # Alternative is to take the mean of means
+            # return full_jobs_df['perc_unattended_historical'].mean()*100
+
+        else:
+            # Melt the DataFrame to long format
+            df_melted = self.historical_attendance_df[
+                ["month", "jobs_not_attended", "jobs_attended"]
+            ].melt(id_vars="month")
+
+            # Calculate proportions per month
+            df_melted["proportion"] = df_melted.groupby("month")["value"].transform(
+                lambda x: x / x.sum()
+            )
+
+            # Plot proportions
+            fig = px.bar(
+                df_melted,
+                x="month",
+                y="proportion",
+                color="variable",
+                text="value",  # Optional: to still show raw values on hover
+            )
+
+            fig.update_layout(
+                barmode="stack", yaxis_tickformat=".0%", yaxis_title="Proportion"
+            )
+            fig.show()
+
+    def PLOT_care_cat_counts_historic(self, show_proportions=False) -> Figure:
+        title = "Care Category of calls in historical data by hour of day with EC/CC/Regular - Heli Benefit/Regular"
+
+        if not show_proportions:
+            fig = px.bar(
+                self.care_cat_by_hour_historic,
+                x="hour",
+                y="count",
+                color="care_category",
+                title=title,
+                category_orders={
+                    "care_category": [
+                        "CC",
+                        "EC",
+                        "REG - helicopter benefit",
+                        "REG",
+                        "Unknown - DAA resource did not attend",
+                    ]
+                },
+            )
+        else:
+            fig = px.bar(
+                self.care_cat_by_hour_historic,
+                x="hour",
+                y="proportion",
+                color="care_category",
+                title=title,
+                category_orders={
+                    "care_category": [
+                        "CC",
+                        "EC",
+                        "REG - helicopter benefit",
+                        "REG",
+                        "Unknown - DAA resource did not attend",
+                    ]
+                },
+            )
+
+        fig.update_layout(xaxis=dict(dtick=1))
+
+        return fig
+
+    def PLOT_RWC_utilisation(self) -> Figure:
         fig = px.box(
             self.historical_utilisation_df_complete,
             x="percentage_utilisation",
@@ -476,3 +503,55 @@ class HistoricResults:
         )
 
         return fig
+
+    def RETURN_missed_jobs_fig(self, care_category, what="average") -> str:
+        row = self.SIM_hist_params_missed_jobs[
+            (self.SIM_hist_params_missed_jobs["care_cat"] == care_category)
+            & (self.SIM_hist_params_missed_jobs["time_type"] == "No Resource Available")
+        ]
+        if what == "average":
+            return row["jobs_per_year_average"].values[0]
+        elif what == "min":
+            return row["jobs_per_year_min"].values[0]
+        elif what == "max":
+            return row["jobs_per_year_max"].values[0]
+
+    def RETURN_hist_util_fig(self, callsign="H70", average="mean") -> str:
+        try:
+            return self.historical_utilisation_df_summary[
+                self.historical_utilisation_df_summary.index == callsign
+            ][average].values[0]
+        except IndexError:
+            return f"Error returning value for callsign {callsign}. Available callsigns are {self.historical_utilisation_df_summary.index.unique()}"
+
+    def RETURN_prediction_cc_patients_sent_ec_resource(self) -> tuple:
+        row_of_interest = self.SIM_hist_suboptimal_care_cat_summary[
+            (self.SIM_hist_suboptimal_care_cat_summary["hems_res_category"] != "CC")
+            & (self.SIM_hist_suboptimal_care_cat_summary["care_cat"] == "CC")
+        ]
+
+        run_duration_days = float(
+            _processing_functions.get_param("sim_duration_days", self.SIM_hist_params)
+        )
+
+        return (
+            (row_of_interest["mean"].values[0] / run_duration_days) * 365,
+            (row_of_interest["min"].values[0] / run_duration_days) * 365,
+            (row_of_interest["max"].values[0] / run_duration_days) * 365,
+        )
+
+    def RETURN_prediction_heli_benefit_patients_sent_car(self) -> tuple:
+        row_of_interest = self.SIM_hist_suboptimal_vehicle_type_summary[
+            (self.SIM_hist_suboptimal_vehicle_type_summary["vehicle_type"] == "car")
+            & (self.SIM_hist_suboptimal_vehicle_type_summary["heli_benefit"] == "y")
+        ]
+
+        run_duration_days = float(
+            _processing_functions.get_param("sim_duration_days", self.SIM_hist_params)
+        )
+
+        return (
+            (row_of_interest["mean"].values[0] / run_duration_days) * 365,
+            (row_of_interest["min"].values[0] / run_duration_days) * 365,
+            (row_of_interest["max"].values[0] / run_duration_days) * 365,
+        )
