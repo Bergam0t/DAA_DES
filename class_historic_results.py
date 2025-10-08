@@ -64,6 +64,8 @@ class HistoricResults:
 
         self.historical_monthly_totals_all_calls = None
         self.historical_monthly_totals_by_hour_of_day = None
+        self.historical_monthly_totals_by_day_of_week = None
+        self.historical_daily_calls_breakdown = None
 
         self.get_SIM_hist_params_missed_jobs_df()
         self.get_SIM_hist_missed_care_cat_breakdown_df()
@@ -81,14 +83,32 @@ class HistoricResults:
         self.get_historical_activity_durations_summary()
         self.get_historical_monthly_totals_by_callsign()
         self.get_historical_monthly_totals_by_hour_of_day()
+        self.get_historical_activity_durations_breakdown()
 
         self.get_historical_monthly_totals_all_calls()
+        self.get_historical_monthly_totals_by_day_of_week()
 
         self.make_RWC_utilisation_dataframe()
+
+        self.get_historical_daily_calls_breakdown()
 
     def get_historical_monthly_totals_by_hour_of_day(self):
         self.historical_monthly_totals_by_hour_of_day = pd.read_csv(
             f"{self.historical_data_path}/historical_monthly_totals_by_hour_of_day.csv"
+        )
+
+    def get_historical_daily_calls_breakdown(self):
+        self.historical_daily_calls_breakdown = pd.read_csv(
+            f"{self.historical_data_path}/historical_daily_calls_breakdown.csv"
+        )
+
+    def get_historical_monthly_totals_by_day_of_week(self):
+        self.historical_monthly_totals_by_day_of_week = pd.read_csv(
+            f"{self.historical_data_path}/historical_monthly_totals_by_day_of_week.csv"
+        )
+
+        self.historical_monthly_totals_by_day_of_week["month"] = pd.to_datetime(
+            self.historical_monthly_totals_by_day_of_week["month"], format="ISO8601"
         )
 
     def get_SIM_hist_params(self):

@@ -136,7 +136,7 @@ class TrialResults:
         self.simulation_event_duration_df_summary = None
 
         # Placeholders for utilisation dataframes
-        self.utilisation_model_df = None
+        # self.utilisation_model_df = None
         self.resource_use_wide = None
         self.utilisation_df_overall = None
         self.utilisation_df_per_run = None
@@ -600,6 +600,8 @@ class TrialResults:
         self.call_df["month_start"] = (
             self.call_df["timestamp_dt"].dt.to_period("M").dt.to_timestamp()
         )
+
+        self.call_df["day_date"] = pd.to_datetime(self.call_df["timestamp_dt"]).dt.date
 
     def get_daily_calls_per_run(self):
         # Calculate the number of calls per day across a full run
@@ -1177,7 +1179,6 @@ class TrialResults:
         error_bar_colour="charcoal",
         show_error_bars_bar=True,
         show_historical=True,
-        historical_data_path="../historical_data/historical_monthly_totals_by_day_of_week.csv",
     ) -> Figure:
         # Create a blank figure to build on
         fig = go.Figure()
@@ -1186,9 +1187,8 @@ class TrialResults:
         # Add historical data if option selected
         ###########
         if show_historical:
-            jobs_per_day_historic = pd.read_csv(historical_data_path)
-            jobs_per_day_historic["month"] = pd.to_datetime(
-                jobs_per_day_historic["month"], format="ISO8601"
+            jobs_per_day_historic = (
+                self.historical_data.historical_monthly_totals_by_day_of_week.copy()
             )
 
             # print("===========jobs_per_day_historic============")
@@ -3673,7 +3673,7 @@ class TrialResults:
     def get_total_times_model(self, get_summary=False):
         if get_summary:
             utilisation_by_vehicle_summary = (
-                self.utilisation_model_df.groupby("vehicle_type")[
+                self.utilisation_df_overall.groupby("vehicle_type")[
                     "resource_use_duration"
                 ]
                 .agg(["mean", "median", "min", "max", q10, q90])
@@ -3682,7 +3682,7 @@ class TrialResults:
             return utilisation_by_vehicle_summary
 
         else:
-            return self.utilisation_model_df
+            return self.utilisation_df_overall
 
     def plot_historical_job_duration_vs_simulation_overall(
         self,
@@ -3693,6 +3693,7 @@ class TrialResults:
     ):
         fig = go.Figure()
 
+        print(self.historical_data.historical_activity_durations_breakdown)
         historical_activity_times_overall = (
             self.historical_data.historical_activity_durations_breakdown[
                 self.historical_data.historical_activity_durations_breakdown["name"]
@@ -3702,7 +3703,7 @@ class TrialResults:
 
         historical_activity_times_overall["what"] = "Historical"
 
-        self.utilisation_model_df["what"] = "Simulated"
+        self.resource_use_wide["what"] = "Simulated"
 
         # Force 'Simulated' to always appear first (left) and 'Historical' second (right)
         historical_activity_times_overall.rename(
@@ -3710,7 +3711,7 @@ class TrialResults:
         )
 
         full_activity_duration_df = pd.concat(
-            [historical_activity_times_overall, self.utilisation_model_df]
+            [historical_activity_times_overall, self.resource_use_wide]
         )
 
         full_activity_duration_df["what"] = pd.Categorical(
@@ -3752,7 +3753,7 @@ class TrialResults:
     def plot_total_times(self, by_run=False):
         if not by_run:
             fig = px.box(
-                self.utilisation_model_df,
+                self.utilisation_df_overall,
                 x="resource_use_duration",
                 y="vehicle_type",
                 color_discrete_sequence=list(DAA_COLORSCHEME.values()),
@@ -3763,7 +3764,7 @@ class TrialResults:
             )
         else:
             fig = px.box(
-                self.utilisation_model_df,
+                self.utilisation_df_overall,
                 x="resource_use_duration",
                 y="vehicle_type",
                 color="run_number",
@@ -3884,14 +3885,15 @@ class TrialResults:
         statistic, p_value = ks_2samp(historical_data_series, simulated_data_series)
 
         if p_value > 0.05:
-            st.success(f"""There is no statistically significant difference between
-                        the distributions of overall job durations for **{what}** in historical data and the
-                        simulation (p = {format_sigfigs(p_value)})
+            st.success(f"""
+There is no statistically significant difference between
+the distributions of overall job durations for **{what}** in historical data and the
+simulation (p = {format_sigfigs(p_value)})
 
-                        This means that the pattern of total job durations produced by the simulation
-                        matches the pattern seen in the real-world data —
-                        for example, the average duration and variability of overall job durations
-                        is sufficiently similar to what has been observed historically.
+This means that the pattern of total job durations produced by the simulation
+matches the pattern seen in the real-world data —
+for example, the average duration and variability of overall job durations
+is sufficiently similar to what has been observed historically.
                         """)
         else:
             if p_value < 0.0001:
@@ -3945,7 +3947,7 @@ class TrialResults:
                     """
                 )
 
-    def plot_time_breakdown(self):
+    def PLOT_time_breakdown(self):
         job_times = [
             "time_allocation",
             "time_mobile",
@@ -4250,3 +4252,136 @@ class TrialResults:
             return row["jobs_per_year_min"].values[0]
         elif what == "max":
             return row["jobs_per_year_max"].values[0]
+
+    def PLOT_days_with_job_count_hist_ks(self):
+        daily_call_counts = (
+            self.call_df.groupby(["run_number", "day_date"])["P_ID"]
+            .agg("count")
+            .reset_index()
+            .rename(columns={"P_ID": "Calls per Day"})
+        )
+
+        # Create histogram with two traces
+        call_count_hist = go.Figure()
+
+        # Simulated data
+        call_count_hist.add_trace(
+            go.Histogram(
+                x=daily_call_counts["Calls per Day"],
+                name="Simulated",
+                histnorm="percent",
+                xbins=dict(  # bins used for histogram
+                    start=0.0,
+                    end=max(daily_call_counts["Calls per Day"]) + 1,
+                    size=1.0,
+                ),
+                opacity=0.75,
+            )
+        )
+
+        # Historical data
+        call_count_hist.add_trace(
+            go.Histogram(
+                x=self.historical_data.historical_daily_calls_breakdown["calls_in_day"],
+                xbins=dict(  # bins used for histogram
+                    start=0.0,
+                    end=max(
+                        self.historical_data.historical_daily_calls_breakdown[
+                            "calls_in_day"
+                        ]
+                    )
+                    + 1,
+                    size=1.0,
+                ),
+                name="Historical",
+                histnorm="percent",
+                opacity=0.75,
+            )
+        )
+
+        # Update layout
+        call_count_hist.update_layout(
+            title="Distribution of Jobs Per Day: Simulated vs Historical",
+            barmode="overlay",
+            bargap=0.03,
+            xaxis=dict(tickmode="linear", tick0=0, dtick=1),
+        )
+
+        # Save and display
+        call_count_hist.write_html(
+            "app/fig_outputs/daily_calls_dist_histogram.html",
+            full_html=False,
+            include_plotlyjs="cdn",
+        )
+
+        call_count_hist.update_layout(
+            font=dict(family="Poppins", size=18, color="black")
+        )
+
+        st.plotly_chart(call_count_hist)
+
+        st.caption("""
+This plot looks at the number of days across all repeats of the simulation where each given number of calls was observed (i.e. on how many days was one call received, two calls, three calls, and so on).
+                        """)
+
+        statistic, p_value = ks_2samp(
+            daily_call_counts["Calls per Day"],
+            self.historical_data.historical_daily_calls_breakdown["calls_in_day"],
+        )
+
+        if p_value > 0.05:
+            st.success(f"""There is no statistically significant difference between
+                                the distributions of call data from historical data and the
+                                simulation (p = {format_sigfigs(p_value)})
+
+                                This means that the pattern of calls produced by the simulation
+                                matches the pattern seen in the real-world data —
+                                for example, the frequency or variability of daily calls
+                                is sufficiently similar to what has been observed historically.
+                                """)
+        else:
+            ks_text_string_sig = f"""
+There is a statistically significant difference between the
+distributions of call data from historical data and
+the simulation (p = {format_sigfigs(p_value)}).
+
+This means that the pattern of calls produced by the simulation
+does not match the pattern seen in the real-world data —
+for example, the frequency or variability of daily calls
+may be different.
+
+The simulation may need to be adjusted to better
+reflect the patterns of demand observed historically.
+
+"""
+
+            if statistic < 0.1:
+                st.info(
+                    ks_text_string_sig
+                    + f"""Although the difference is
+                                statistically significant, the actual magnitude
+                                of the difference (D = {format_sigfigs(statistic)}) is small.
+                                This suggests the simulation's call volume pattern is reasonably
+                                close to reality.
+                                """
+                )
+
+            elif statistic < 0.2:
+                st.warning(
+                    ks_text_string_sig
+                    + f"""The KS statistic (D = {format_sigfigs(statistic)})
+                                indicates a moderate difference in
+                                distribution. You may want to review the simulation model to
+                                ensure it adequately reflects real-world variability.
+                                """
+                )
+
+            else:
+                st.error(
+                    ks_text_string_sig
+                    + f"""The KS statistic (D = {format_sigfigs(statistic)})
+                                suggests a large difference in call volume patterns.
+                                The simulation may not accurately reflect historical
+                                demand and may need adjustment.
+                                """
+                )

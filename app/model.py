@@ -880,326 +880,188 @@ Partial months are excluded for ease of interpretation.
 
                 plot_jobs_per_hour()
 
-#             with tab_3_3:
+            with tab_3_3:
 
-#                 @st.fragment
-#                 def plot_jobs_per_day():
-#                     call_df = get_job_count_df()
-#                     params_df = get_params_df()
-#                     # help_jph = get_text("help_jobs_per_hour", text_df)
-#                     jpd_1, jpd_2, jpd_3, jpd_4 = st.columns(4)
+                @st.fragment
+                def plot_jobs_per_day():
+                    # help_jph = get_text("help_jobs_per_hour", text_df)
+                    jpd_1, jpd_2, jpd_3, jpd_4 = st.columns(4)
 
-#                     display_historic_jph_pd = jpd_1.toggle(
-#                         "Display Historic Data", value=True, key="historic_pd"
-#                     )
+                    display_historic_jph_pd = jpd_1.toggle(
+                        "Display Historic Data", value=True, key="historic_pd"
+                    )
 
-#                     average_per_month_pd = jpd_2.toggle(
-#                         "Display Average Calls Per Day",
-#                         value=True,
-#                         # help= help_jph,
-#                         key="average_pd",
-#                     )
+                    average_per_month_pd = jpd_2.toggle(
+                        "Display Average Calls Per Day",
+                        value=True,
+                        # help= help_jph,
+                        key="average_pd",
+                    )
 
-#                     display_advanced_pd = jpd_3.toggle(
-#                         "Display Advanced Plot", value=False, key="advanced_pd"
-#                     )
+                    display_advanced_pd = jpd_3.toggle(
+                        "Display Advanced Plot", value=False, key="advanced_pd"
+                    )
 
-#                     if not display_advanced_pd:
-#                         display_error_bars_bar_pd = jpd_4.toggle(
-#                             "Display Variation", key="variation_pd"
-#                         )
-#                     else:
-#                         display_error_bars_bar_pd = False
+                    if not display_advanced_pd:
+                        display_error_bars_bar_pd = jpd_4.toggle(
+                            "Display Variation", key="variation_pd"
+                        )
+                    else:
+                        display_error_bars_bar_pd = False
 
-#                     fig_day_of_week = _job_count_calculation.plot_daily_call_counts(
-#                         call_df,
-#                         params_df,
-#                         average_per_month=average_per_month_pd,
-#                         box_plot=display_advanced_pd,
-#                         show_error_bars_bar=display_error_bars_bar_pd,
-#                         use_poppins=True,
-#                         show_historical=display_historic_jph_pd,
-#                         historical_data_path="historical_data/historical_monthly_totals_by_day_of_week.csv",
-#                     )
+                    fig_day_of_week = trial_results.PLOT_daily_call_counts(
+                        average_per_month=average_per_month_pd,
+                        box_plot=display_advanced_pd,
+                        show_error_bars_bar=display_error_bars_bar_pd,
+                        use_poppins=True,
+                        show_historical=display_historic_jph_pd,
+                    )
 
-#                     _job_count_calculation.plot_daily_call_counts(
-#                         call_df,
-#                         params_df,
-#                         average_per_month=average_per_month_pd,
-#                         box_plot=display_advanced_pd,
-#                         show_error_bars_bar=display_error_bars_bar_pd,
-#                         use_poppins=False,
-#                         show_historical=display_historic_jph_pd,
-#                         historical_data_path="historical_data/historical_monthly_totals_by_day_of_week.csv",
-#                     ).write_html(
-#                         "app/fig_outputs/fig_day_of_week.html",
-#                         full_html=False,
-#                         include_plotlyjs="cdn",
-#                     )  # , post_script = poppins_script)
+                    trial_results.PLOT_daily_call_counts(
+                        average_per_month=average_per_month_pd,
+                        box_plot=display_advanced_pd,
+                        show_error_bars_bar=display_error_bars_bar_pd,
+                        use_poppins=False,
+                        show_historical=display_historic_jph_pd,
+                    ).write_html(
+                        "app/fig_outputs/fig_day_of_week.html",
+                        full_html=False,
+                        include_plotlyjs="cdn",
+                    )  # , post_script = poppins_script)
 
-#                     st.plotly_chart(fig_day_of_week)
+                    st.plotly_chart(fig_day_of_week)
 
-#                 plot_jobs_per_day()
+                plot_jobs_per_day()
 
-#             #######################################
-#             # Histogram of calls received per day #
-#             #######################################
+            #######################################
+            # Histogram of calls received per day #
+            #######################################
 
-#             with tab_3_4:
+            with tab_3_4:
 
-#                 @st.fragment()
-#                 def plot_days_with_job_count_hist():
-#                     call_df = get_job_count_df()
-#                     call_df["day"] = pd.to_datetime(call_df["timestamp_dt"]).dt.date
-#                     daily_call_counts = (
-#                         call_df.groupby(["run_number", "day"])["P_ID"]
-#                         .agg("count")
-#                         .reset_index()
-#                         .rename(columns={"P_ID": "Calls per Day"})
-#                     )
+                @st.fragment()
+                def plot_days_with_job_count_hist():
+                    trial_results.PLOT_days_with_job_count_hist_ks()
 
-#                     historical_daily_calls = pd.read_csv(
-#                         "historical_data/historical_daily_calls_breakdown.csv"
-#                     )
+                plot_days_with_job_count_hist()
 
-#                     # Create histogram with two traces
-#                     call_count_hist = go.Figure()
+            ##############################################
+            # Historical Job Durations - Overall Summary #
+            ##############################################
 
-#                     # Simulated data
-#                     call_count_hist.add_trace(
-#                         go.Histogram(
-#                             x=daily_call_counts["Calls per Day"],
-#                             name="Simulated",
-#                             histnorm="percent",
-#                             xbins=dict(  # bins used for histogram
-#                                 start=0.0,
-#                                 end=max(daily_call_counts["Calls per Day"]) + 1,
-#                                 size=1.0,
-#                             ),
-#                             opacity=0.75,
-#                         )
-#                     )
+            with tab_3_5:
 
-#                     # Historical data
-#                     call_count_hist.add_trace(
-#                         go.Histogram(
-#                             x=historical_daily_calls["calls_in_day"],
-#                             xbins=dict(  # bins used for histogram
-#                                 start=0.0,
-#                                 end=max(historical_daily_calls["calls_in_day"]) + 1,
-#                                 size=1.0,
-#                             ),
-#                             name="Historical",
-#                             histnorm="percent",
-#                             opacity=0.75,
-#                         )
-#                     )
+                @st.fragment
+                def create_job_duration_plot():
+                    plot_violin = st.toggle("Violin Plot?", value=False)
 
-#                     # Update layout
-#                     call_count_hist.update_layout(
-#                         title="Distribution of Jobs Per Day: Simulated vs Historical",
-#                         barmode="overlay",
-#                         bargap=0.03,
-#                         xaxis=dict(tickmode="linear", tick0=0, dtick=1),
-#                     )
+                    # Create plot for inclusion in streamlit
+                    fig_job_durations_historical = trial_results.plot_historical_job_duration_vs_simulation_overall(
+                        use_poppins=True,
+                        write_to_html=True,
+                        html_output_filepath="app/fig_outputs/fig_job_durations_historical.html",
+                        violin=plot_violin,
+                    )
 
-#                     # Save and display
-#                     call_count_hist.write_html(
-#                         "app/fig_outputs/daily_calls_dist_histogram.html",
-#                         full_html=False,
-#                         include_plotlyjs="cdn",
-#                     )
+                    # Include job durations plot in streamlit app
+                    st.plotly_chart(fig_job_durations_historical)
 
-#                     call_count_hist.update_layout(
-#                         font=dict(family="Poppins", size=18, color="black")
-#                     )
+                    st.caption("""
+    This plot looks at the total amount of time each resource was in use during the simulation.
 
-#                     st.plotly_chart(call_count_hist)
+    All simulated points are represented in the box plots.
 
-#                     st.caption("""
-# This plot looks at the number of days across all repeats of the simulation where each given number of calls was observed (i.e. on how many days was one call received, two calls, three calls, and so on).
-#                            """)
+    The blue bars give an indication of the historical averages. We would expect the median - the
+    central horizontal line within the box portion of the box plots - to fall within the blue box for
+    each resource type, and likely to be fairly central within that region.
+    """)
 
-#                     statistic, p_value = ks_2samp(
-#                         daily_call_counts["Calls per Day"],
-#                         historical_daily_calls["calls_in_day"],
-#                     )
+                    historical_data.historical_time_df_cars_only = (
+                        historical_data.historical_activity_durations_breakdown[
+                            historical_data.historical_activity_durations_breakdown[
+                                "vehicle_type"
+                            ]
+                            == "car"
+                        ]
+                    )
+                    historical_data.historical_time_df_helos_only = (
+                        historical_data.historical_activity_durations_breakdown[
+                            historical_data.historical_activity_durations_breakdown[
+                                "vehicle_type"
+                            ]
+                            == "helicopter"
+                        ]
+                    )
 
-#                     if p_value > 0.05:
-#                         st.success(f"""There is no statistically significant difference between
-#                                  the distributions of call data from historical data and the
-#                                  simulation (p = {format_sigfigs(p_value)})
+                    trial_results.simulated_job_time_df_cars_only = (
+                        trial_results.resource_use_wide[
+                            trial_results.resource_use_wide["vehicle_type"] == "car"
+                        ]
+                    )
+                    trial_results.simulated_job_time_df_helos_only = (
+                        trial_results.resource_use_wide[
+                            trial_results.resource_use_wide["vehicle_type"]
+                            == "helicopter"
+                        ]
+                    )
 
-#                                  This means that the pattern of calls produced by the simulation
-#                                  matches the pattern seen in the real-world data —
-#                                  for example, the frequency or variability of daily calls
-#                                  is sufficiently similar to what has been observed historically.
-#                                  """)
-#                     else:
-#                         ks_text_string_sig = f"""
-# There is a statistically significant difference between the
-# distributions of call data from historical data and
-# the simulation (p = {format_sigfigs(p_value)}).
+                    trial_results.calculate_ks_for_job_durations(
+                        historical_data_series=historical_data.historical_time_df_helos_only[
+                            historical_data.historical_time_df_helos_only["name"]
+                            == "total_duration"
+                        ]["value"],
+                        simulated_data_series=trial_results.simulated_job_time_df_helos_only[
+                            "resource_use_duration"
+                        ],
+                        what="helicopters",
+                    )
 
-# This means that the pattern of calls produced by the simulation
-# does not match the pattern seen in the real-world data —
-# for example, the frequency or variability of daily calls
-# may be different.
+                    trial_results.calculate_ks_for_job_durations(
+                        historical_data_series=historical_data.historical_time_df_cars_only[
+                            historical_data.historical_time_df_cars_only["name"]
+                            == "total_duration"
+                        ]["value"],
+                        simulated_data_series=trial_results.simulated_job_time_df_cars_only[
+                            "resource_use_duration"
+                        ],
+                        what="cars",
+                    )
 
-# The simulation may need to be adjusted to better
-# reflect the patterns of demand observed historically.
+                create_job_duration_plot()
 
-# """
+            ############################
+            # Historical Job Durations - Breakdown #
+            ############################
 
-#                         if statistic < 0.1:
-#                             st.info(
-#                                 ks_text_string_sig
-#                                 + f"""Although the difference is
-#                                     statistically significant, the actual magnitude
-#                                     of the difference (D = {format_sigfigs(statistic)}) is small.
-#                                     This suggests the simulation's call volume pattern is reasonably
-#                                     close to reality.
-#                                     """
-#                             )
+            with tab_3_6:
+                st.plotly_chart(trial_results.PLOT_time_breakdown())
 
-#                         elif statistic < 0.2:
-#                             st.warning(
-#                                 ks_text_string_sig
-#                                 + f"""The KS statistic (D = {format_sigfigs(statistic)})
-#                                     indicates a moderate difference in
-#                                     distribution. You may want to review the simulation model to
-#                                     ensure it adequately reflects real-world variability.
-#                                     """
-#                             )
+                st.caption("""
+This chart is comparing how long different stages of emergency jobs take in real life (called Historical) versus how long they take in a computer simulation (called Simulated).
 
-#                         else:
-#                             st.error(
-#                                 ks_text_string_sig
-#                                 + f"""The KS statistic (D = {format_sigfigs(statistic)})
-#                                    suggests a large difference in call volume patterns.
-#                                    The simulation may not accurately reflect historical
-#                                    demand and may need adjustment.
-#                                     """
-#                             )
+The idea is to check if the simulation is realistic by seeing if it behaves similarly to what actually happened in the past.
 
-#                 plot_days_with_job_count_hist()
+Each job has several stages:
 
-#             ##############################################
-#             # Historical Job Durations - Overall Summary #
-#             ##############################################
+- Time allocation: Time from when the call was made to when a vehicle was assigned.
+- Time mobile: Time from assignment to when the vehicle started moving.
+- Time to scene: Travel time to the scene.
+- Time on scene: Time spent at the scene.
+- Time to hospital: Travel time to the hospital (if applicable).
+- Time to clear: Time from hospital drop-off (or leaving the scene, if no patient transport undertaken) to when the vehicle is ready for the next job.
 
-#             with tab_3_5:
+These stages are shown for two types of vehicles:
 
-#                 @st.fragment
-#                 def create_job_duration_plot():
-#                     historical_time_df = _job_time_calcs.get_historical_times_breakdown(
-#                         "historical_data/historical_job_durations_breakdown.csv"
-#                     )
+- Cars (top row) - including both helicopter backup cars and standalone vehicles
+- Helicopters (bottom row)
 
-#                     simulated_job_time_df = _job_time_calcs.get_total_times_model(
-#                         get_summary=False,
-#                         path="data/run_results.csv",
-#                         params_path="data/run_params_used.csv",
-#                         rota_path="actual_data/HEMS_ROTA.csv",
-#                         service_path="data/service_dates.csv",
-#                         callsign_path="actual_data/callsign_registration_lookup.csv",
-#                         rota_times="actual_data/rota_start_end_months.csv",
-#                     )
+## How to Read the Boxes
 
-#                     plot_violin = st.toggle("Violin Plot?", value=False)
-
-#                     # Create plot for inclusion in streamlit
-#                     fig_job_durations_historical = _job_time_calcs.plot_historical_job_duration_vs_simulation_overall(
-#                         historical_activity_times=historical_time_df,
-#                         utilisation_model_df=simulated_job_time_df,
-#                         use_poppins=True,
-#                         write_to_html=True,
-#                         html_output_filepath="app/fig_outputs/fig_job_durations_historical.html",
-#                         violin=plot_violin,
-#                     )
-
-#                     # Include job durations plot in streamlit app
-#                     st.plotly_chart(fig_job_durations_historical)
-
-#                     st.caption("""
-#     This plot looks at the total amount of time each resource was in use during the simulation.
-
-#     All simulated points are represented in the box plots.
-
-#     The blue bars give an indication of the historical averages. We would expect the median - the
-#     central horizontal line within the box portion of the box plots - to fall within the blue box for
-#     each resource type, and likely to be fairly central within that region.
-#     """)
-
-#                     historical_time_df_cars_only = historical_time_df[
-#                         historical_time_df["vehicle_type"] == "car"
-#                     ]
-#                     historical_time_df_helos_only = historical_time_df[
-#                         historical_time_df["vehicle_type"] == "helicopter"
-#                     ]
-
-#                     simulated_job_time_df_cars_only = simulated_job_time_df[
-#                         simulated_job_time_df["vehicle_type"] == "car"
-#                     ]
-#                     simulated_job_time_df_helos_only = simulated_job_time_df[
-#                         simulated_job_time_df["vehicle_type"] == "helicopter"
-#                     ]
-
-#                     _job_time_calcs.calculate_ks_for_job_durations(
-#                         historical_data_series=historical_time_df_helos_only[
-#                             historical_time_df_helos_only["name"] == "total_duration"
-#                         ]["value"],
-#                         simulated_data_series=simulated_job_time_df_helos_only[
-#                             "resource_use_duration"
-#                         ],
-#                         what="helicopters",
-#                     )
-
-#                     _job_time_calcs.calculate_ks_for_job_durations(
-#                         historical_data_series=historical_time_df_cars_only[
-#                             historical_time_df_cars_only["name"] == "total_duration"
-#                         ]["value"],
-#                         simulated_data_series=simulated_job_time_df_cars_only[
-#                             "resource_use_duration"
-#                         ],
-#                         what="cars",
-#                     )
-
-#                 create_job_duration_plot()
-
-#             ############################
-#             # Historical Job Durations - Breakdown #
-#             ############################
-
-#             with tab_3_6:
-#                 st.plotly_chart(_job_time_calcs.plot_time_breakdown())
-
-#                 st.caption("""
-# This chart is comparing how long different stages of emergency jobs take in real life (called Historical) versus how long they take in a computer simulation (called Simulated).
-
-# The idea is to check if the simulation is realistic by seeing if it behaves similarly to what actually happened in the past.
-
-# Each job has several stages:
-
-# - Time allocation: Time from when the call was made to when a vehicle was assigned.
-# - Time mobile: Time from assignment to when the vehicle started moving.
-# - Time to scene: Travel time to the scene.
-# - Time on scene: Time spent at the scene.
-# - Time to hospital: Travel time to the hospital (if applicable).
-# - Time to clear: Time from hospital drop-off (or leaving the scene, if no patient transport undertaken) to when the vehicle is ready for the next job.
-
-# These stages are shown for two types of vehicles:
-
-# - Cars (top row) - including both helicopter backup cars and standalone vehicles
-# - Helicopters (bottom row)
-
-# ## How to Read the Boxes
-
-# - Each blue box shows the range of times for that job stage—how long it usually takes.
-# - The dark blue boxes are the simulated times, and the light blue ones are the historical (real) times.
-# - Taller boxes or longer “whiskers” (lines) mean more **variation** in how long that stage takes.
-# - If the boxes and whiskers for simulated and historical data overlap a lot, that means the simulation is doing a good job of copying reality.
-#                            """)
+- Each blue box shows the range of times for that job stage—how long it usually takes.
+- The dark blue boxes are the simulated times, and the light blue ones are the historical (real) times.
+- Taller boxes or longer “whiskers” (lines) mean more **variation** in how long that stage takes.
+- If the boxes and whiskers for simulated and historical data overlap a lot, that means the simulation is doing a good job of copying reality.
+                           """)
 
 #         with tab4:
 #             st.caption("""
