@@ -1,5 +1,6 @@
 import streamlit as st
 import platform
+import os
 
 # Data processing imports
 import pandas as pd
@@ -47,6 +48,9 @@ with open("app/style.css") as css:
 
 
 setup_state()
+
+st.write("Current working directory:", os.getcwd())
+st.write("Contents:", os.listdir())
 
 # Pull in required font
 poppins_script = """
