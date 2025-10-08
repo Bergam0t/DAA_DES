@@ -585,6 +585,8 @@ class TrialResults:
         # backfill this per patient/run so we'll have access to it from the row for
         # the patient's arrival
         run_results_bfilled = self.run_results.copy()
+        if "P_ID" not in run_results_bfilled.columns:
+            run_results_bfilled = run_results_bfilled.reset_index()
 
         run_results_bfilled["hems_result"] = run_results_bfilled.groupby(
             ["P_ID", "run_number"]
