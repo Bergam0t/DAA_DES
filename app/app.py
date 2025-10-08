@@ -15,9 +15,7 @@ if "first_load" not in st.session_state:
     st.session_state["first_load"] = False
 
 if platform.processor() == "":
-    get_quarto(
-        "quarto_streamlit_community_cloud"
-    )  # This name must match the repository name on GitHub
+    get_quarto("daa_des")  # This name must match the repository name on GitHub
 
 pg = st.navigation(
     {
