@@ -41,9 +41,11 @@ from class_simulation_trial_results import TrialResults
 from class_simulation_inputs import SimulationInputs
 from class_historic_results import HistoricResults
 
+APP_DIR = Path(__file__).parent.resolve()
+
 st.set_page_config(layout="wide")
 
-with open("app/style.css") as css:
+with open(f"{APP_DIR}/style.css") as css:
     st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
 
@@ -75,7 +77,7 @@ with col1:
     st.title("Run a Simulation")
 
 with col2:
-    st.image("app/assets/daa-logo.svg", width=200)
+    st.image(f"{APP_DIR}/assets/daa-logo.svg", width=200)
 
 with st.sidebar:
     # generate_downloadable_report = st.toggle("Generate a Downloadable Summary of Results", False,
@@ -238,11 +240,7 @@ if button_run_pressed:
             # report_message.info("Generating Report...")
 
         simulation_inputs = SimulationInputs(
-            params_df_path="data/run_params_used.csv",
-            rota_path="actual_data/HEMS_ROTA.csv",
-            service_path="data/service_dates.csv",
-            callsign_path="actual_data/callsign_registration_lookup.csv",
-            rota_times="actual_data/rota_start_end_months.csv",
+            data_folder_path="data", actual_data_folder_path="actual_data"
         )
 
         historical_data = HistoricResults(
@@ -589,7 +587,7 @@ In this case, we would be looking for two things to be consistent across the top
                     fig_utilisation = trial_results.PLOT_UTIL_rwc_plot()
 
                     fig_utilisation.write_html(
-                        "app/fig_outputs/fig_utilisation.html",
+                        f"{APP_DIR}/fig_outputs/fig_utilisation.html",
                         full_html=False,
                         include_plotlyjs="cdn",
                     )  # , post_script = poppins_script)#,full_html=False, include_plotlyjs='cdn')
@@ -823,7 +821,7 @@ dataset.
                         show_historical_individual_years=show_historical_individual_years,
                         job_count_col="inc_date",
                     ).write_html(
-                        "app/fig_outputs/fig_monthly_calls.html",
+                        f"{APP_DIR}/fig_outputs/fig_monthly_calls.html",
                         full_html=False,
                         include_plotlyjs="cdn",
                     )  # , post_script = poppins_script)
@@ -874,7 +872,7 @@ Partial months are excluded for ease of interpretation.
                         use_poppins=False,
                         show_historical=display_historic_jph,
                     ).write_html(
-                        "app/fig_outputs/fig_hour_of_day.html",
+                        f"{APP_DIR}/fig_outputs/fig_hour_of_day.html",
                         full_html=False,
                         include_plotlyjs="cdn",
                     )  # , post_script = poppins_script)
@@ -927,7 +925,7 @@ Partial months are excluded for ease of interpretation.
                         use_poppins=False,
                         show_historical=display_historic_jph_pd,
                     ).write_html(
-                        "app/fig_outputs/fig_day_of_week.html",
+                        f"{APP_DIR}/fig_outputs/fig_day_of_week.html",
                         full_html=False,
                         include_plotlyjs="cdn",
                     )  # , post_script = poppins_script)
@@ -962,7 +960,7 @@ Partial months are excluded for ease of interpretation.
                     fig_job_durations_historical = trial_results.plot_historical_job_duration_vs_simulation_overall(
                         use_poppins=True,
                         write_to_html=True,
-                        html_output_filepath="app/fig_outputs/fig_job_durations_historical.html",
+                        html_output_filepath=f"{APP_DIR}/fig_outputs/fig_job_durations_historical.html",
                         violin=plot_violin,
                     )
 
@@ -1455,9 +1453,7 @@ the overall time period.*
                         "Generating report. This may take a minute...", show_time=True
                     ):
                         try:
-                            with open(
-                                "app/fig_outputs/quarto_text.txt", "w"
-                            ) as text_file:
+                            with open("fig_outputs/quarto_text.txt", "w") as text_file:
                                 text_file.write(quarto_string)
 
                             msg = generate_quarto_report(run_quarto_check=False)

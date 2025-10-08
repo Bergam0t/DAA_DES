@@ -5,18 +5,15 @@ from _processing_functions import graceful_methods
 @graceful_methods
 class SimulationInputs:
     def __init__(
-        self,
-        params_df_path="../data/run_params_used.csv",
-        rota_path="../actual_data/HEMS_ROTA.csv",
-        service_path="../data/service_dates.csv",
-        callsign_path="../actual_data/callsign_registration_lookup.csv",
-        rota_times="../actual_data/rota_start_end_months.csv",
+        self, data_folder_path="../data", actual_data_folder_path="../actual_data"
     ):
-        self.params_df_path = params_df_path
-        self.rota_path = rota_path
-        self.service_path = service_path
-        self.callsign_path = callsign_path
-        self.rota_times = rota_times
+        self.params_df_path = f"{data_folder_path}/run_params_used.csv"
+        self.rota_path = f"{actual_data_folder_path}/HEMS_ROTA.csv"
+        self.service_path = f"{data_folder_path}/service_dates.csv"
+        self.callsign_path = (
+            f"{actual_data_folder_path}/callsign_registration_lookup.csv"
+        )
+        self.rota_times = f"{actual_data_folder_path}/rota_start_end_months.csv"
 
         self.params_df = pd.read_csv(self.params_df_path)
         self.rota_df = pd.read_csv(self.rota_path)

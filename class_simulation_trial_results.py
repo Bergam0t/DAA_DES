@@ -80,17 +80,6 @@ import gc
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-from _app_utils import (
-    DAA_COLORSCHEME,
-    q10,
-    q90,
-    q25,
-    q75,
-    format_sigfigs,
-    iconMetricContainer,
-)
-
 import datetime
 from calendar import monthrange, day_name
 import itertools
@@ -101,6 +90,17 @@ from scipy.stats import ks_2samp
 import streamlit as st
 
 from _processing_functions import graceful_methods
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from _app_utils import (
+    DAA_COLORSCHEME,
+    q10,
+    q90,
+    q25,
+    q75,
+    format_sigfigs,
+    iconMetricContainer,
+)
 
 
 @graceful_methods
