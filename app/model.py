@@ -239,22 +239,34 @@ if button_run_pressed:
 
             # report_message.info("Generating Report...")
 
-        simulation_inputs = SimulationInputs(
-            data_folder_path="data", actual_data_folder_path="actual_data"
-        )
+        try:
+            simulation_inputs = SimulationInputs(
+                data_folder_path="data", actual_data_folder_path="actual_data"
+            )
+            print("simulation input object created successfully")
+        except FileNotFoundError:
+            print("data folder or actual_data folder not found")
 
-        historical_data = HistoricResults(
-            historical_data_folder_path="historical_data",
-            historic_rota_df_path="tests/rotas_historic/HISTORIC_HEMS_ROTA.csv",
-            historic_callsign_df_path="tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv",
-            historic_servicing_df_path="tests/rotas_historic/HISTORIC_service_dates.csv",
-        )
+        try:
+            historical_data = HistoricResults(
+                historical_data_folder_path="historical_data",
+                historic_rota_df_path="tests/rotas_historic/HISTORIC_HEMS_ROTA.csv",
+                historic_callsign_df_path="tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv",
+                historic_servicing_df_path="tests/rotas_historic/HISTORIC_service_dates.csv",
+            )
+            print("historical data object created successfully")
+        except FileNotFoundError:
+            print("historical data folder or historic rotas not found")
 
-        trial_results = TrialResults(
-            simulation_inputs=simulation_inputs,
-            run_results=pd.read_csv("data/run_results.csv"),
-            historical_data=historical_data,
-        )
+        try:
+            trial_results = TrialResults(
+                simulation_inputs=simulation_inputs,
+                historical_data=historical_data,
+                run_results=pd.read_csv("data/run_results.csv"),
+            )
+            print("trial results object created successfully")
+        except FileNotFoundError:
+            print("run results not found")
 
         with tab1:
             quarto_string += "# Key Metrics\n\n"
