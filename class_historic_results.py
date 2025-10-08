@@ -60,8 +60,10 @@ class HistoricResults:
         self.SIM_hist_suboptimal_care_cat_summary = None
         self.SIM_hist_suboptimal_vehicle_type_summary = None
         self.SIM_historical_params_df = None
+        self.SIM_hist_missed_care_cat_breakdown = None
 
         self.get_SIM_hist_params_missed_jobs_df()
+        self.get_SIM_hist_missed_care_cat_breakdown_df()
         self.get_SIM_hist_suboptimal_care_cat_summary_df()
         self.get_SIM_hist_suboptimal_vehicle_type_summary_df()
         self.get_SIM_hist_params()
@@ -86,6 +88,11 @@ class HistoricResults:
     def get_SIM_hist_params_missed_jobs_df(self):
         self.SIM_hist_params_missed_jobs = pd.read_csv(
             f"{self.historical_data_path}/calculated/SIM_hist_params_missed_jobs_care_cat_summary.csv"
+        )
+
+    def get_SIM_hist_missed_care_cat_breakdown_df(self):
+        self.SIM_hist_missed_care_cat_breakdown = pd.read_csv(
+            f"{self.historical_data_path}/calculated/SIM_hist_params_missed_jobs_care_cat_breakdown.csv"
         )
 
     def get_SIM_hist_suboptimal_care_cat_summary_df(self):

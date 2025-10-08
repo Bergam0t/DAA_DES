@@ -1764,7 +1764,7 @@ class TrialResults:
     ) -> Figure:
         run_results = self.run_results[
             self.run_results["event_type"] == "resource_use"
-        ][["P_ID", "run_number", "hour", "timestamp_dt", "time_type"]].copy()
+        ][["P_ID", "run_number", "hour", "timestamp_dt", "time_type", "month"]].copy()
 
         # Prepare full grid of (month, hour, callsign)
         hours = list(range(24))
@@ -2440,8 +2440,8 @@ class TrialResults:
     # TODO: NOT YET CONVERTED TO OO
     ##########################
     def make_SIMULATION_utilisation_variation_plot(
-        utilisation_df_per_run,
-        historical_utilisation_df_summary,
+        self,
+        historical_results_obj,
         car_colour="blue",
         helicopter_colour="red",
         use_poppins=False,
@@ -2452,26 +2452,14 @@ class TrialResults:
 
         Parameters
         ----------
-        utilisation_df_per_run : pandas.DataFrame
-            A DataFrame containing utilization data per simulation run.
-            Must include "callsign", "perc_time_in_use", "vehicle_type".
-        historical_utilisation_df_summary : pandas.DataFrame or None
-            A DataFrame indexed by "callsign" with columns "min", "mean", "max"
-            for historical utilization percentages (0-100). If None, no
-            historical data is plotted.
-        car_colour : str, optional
-            Key for DAA_COLORSCHEME for car elements.
-        helicopter_colour : str, optional
-            Key for DAA_COLORSCHEME for helicopter elements.
-        use_poppins : bool, optional
-            Whether to use "Poppins" font.
+        historical_results_obj
 
         Returns
         -------
         plotly.graph_objects.Figure
             A Plotly box plot.
         """
-        utilisation_df_per_run = utilisation_df_per_run.reset_index()
+        utilisation_df_per_run = self.utilisation_df_per_run.reset_index()
         utilisation_df_per_run["vehicle_type"] = utilisation_df_per_run[
             "vehicle_type"
         ].str.title()
@@ -2515,67 +2503,70 @@ class TrialResults:
         )
 
         # Add historical data
-        if historical_utilisation_df_summary is not None:
-            historical_utilisation_df_summary.index = (
-                historical_utilisation_df_summary.index.astype(str)
-            )
-            historical_marker_height_fraction = 0.4
+        historical_utilisation_df_summary = (
+            historical_results_obj.historical_utilisation_df_summary.copy()
+        )
+        historical_utilisation_df_summary.index = (
+            historical_utilisation_df_summary.index.astype(str)
+        )
 
-            for num_idx, callsign_str in enumerate(sorted_callsigns):
-                if callsign_str in historical_utilisation_df_summary.index:
-                    row = historical_utilisation_df_summary.loc[callsign_str]
-                    min_val = row["min"] / 100.0
-                    max_val = row["max"] / 100.0
-                    mean_val = row["mean"] / 100.0
+        historical_marker_height_fraction = 0.4
 
-                    y_pos_center = num_idx
-                    y_pos_start = y_pos_center - historical_marker_height_fraction
-                    y_pos_end = y_pos_center + historical_marker_height_fraction
+        for num_idx, callsign_str in enumerate(sorted_callsigns):
+            if callsign_str in historical_utilisation_df_summary.index:
+                row = historical_utilisation_df_summary.loc[callsign_str]
+                min_val = row["min"] / 100.0
+                max_val = row["max"] / 100.0
+                mean_val = row["mean"] / 100.0
 
-                    fig.add_shape(
-                        type="rect",
-                        yref="y",
-                        xref="x",
-                        y0=y_pos_start,
-                        x0=min_val,
-                        y1=y_pos_end,
-                        x1=max_val,
-                        fillcolor=DAA_COLORSCHEME.get(
-                            "historical_box_fill", "rgba(0,0,0,0.08)"
+                y_pos_center = num_idx
+                y_pos_start = y_pos_center - historical_marker_height_fraction
+                y_pos_end = y_pos_center + historical_marker_height_fraction
+
+                fig.add_shape(
+                    type="rect",
+                    yref="y",
+                    xref="x",
+                    y0=y_pos_start,
+                    x0=min_val,
+                    y1=y_pos_end,
+                    x1=max_val,
+                    fillcolor=DAA_COLORSCHEME.get(
+                        "historical_box_fill", "rgba(0,0,0,0.08)"
+                    ),
+                    line=dict(color="rgba(0,0,0,0)"),
+                    layer="below",
+                )
+
+                fig.add_shape(
+                    type="line",
+                    yref="y",
+                    xref="x",
+                    y0=y_pos_start,
+                    x0=mean_val,
+                    y1=y_pos_end,
+                    x1=mean_val,
+                    line=dict(
+                        dash="dot",
+                        color=DAA_COLORSCHEME.get("charcoal", "black"),
+                        width=2,
+                    ),
+                    layer="below",
+                )
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=[mean_val + 0.01],
+                        y=[callsign_str],
+                        text=[f"Hist. Mean: {mean_val:.0%}"],
+                        mode="text",
+                        textfont=dict(
+                            color=DAA_COLORSCHEME.get("charcoal", "black"), size=10
                         ),
-                        line=dict(color="rgba(0,0,0,0)"),
-                        layer="below",
+                        hoverinfo="skip",
+                        showlegend=False,
                     )
-
-                    fig.add_shape(
-                        type="line",
-                        yref="y",
-                        xref="x",
-                        y0=y_pos_start,
-                        x0=mean_val,
-                        y1=y_pos_end,
-                        x1=mean_val,
-                        line=dict(
-                            dash="dot",
-                            color=DAA_COLORSCHEME.get("charcoal", "black"),
-                            width=2,
-                        ),
-                        layer="below",
-                    )
-
-                    fig.add_trace(
-                        go.Scatter(
-                            x=[mean_val + 0.01],
-                            y=[callsign_str],
-                            text=[f"Hist. Mean: {mean_val:.0%}"],
-                            mode="text",
-                            textfont=dict(
-                                color=DAA_COLORSCHEME.get("charcoal", "black"), size=10
-                            ),
-                            hoverinfo="skip",
-                            showlegend=False,
-                        )
-                    )
+                )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
@@ -2601,8 +2592,8 @@ class TrialResults:
         return fig
 
     def PLOT_SIMULATION_utilisation_summary(
-        utilisation_df_overall,
-        historical_utilisation_df_summary,
+        self,
+        historical_results_obj,
         car_colour="blue",
         helicopter_colour="red",
         use_poppins=False,
@@ -2613,13 +2604,7 @@ class TrialResults:
 
         Parameters
         ----------
-        utilisation_df_overall : pandas.DataFrame
-            A DataFrame containing overall utilization data, generated by
-            make_utilisation_model_dataframe()..
-            It must include the columns:
-            - "callsign": Identifier for the resource.
-            - "perc_time_in_use": Average percentage of time the resource was in use.
-            - "vehicle_type": Type of vehicle (e.g., "Car", "Helicopter").
+        historical_results_obj
 
         Returns
         -------
@@ -2640,7 +2625,7 @@ class TrialResults:
         >>> fig = make_SIMULATION_utilisation_summary_plot(utilisation_df)
         >>> fig.show()
         """
-        utilisation_df_overall = utilisation_df_overall.reset_index()
+        utilisation_df_overall = self.utilisation_df_overall.reset_index()
         utilisation_df_overall["vehicle_type"] = utilisation_df_overall[
             "vehicle_type"
         ].str.title()
@@ -2695,8 +2680,13 @@ class TrialResults:
 
         # Iterate through the callsigns in the order they appear on the axis
         for num_idx, callsign_str in enumerate(x_axis_categories):
-            if callsign_str in historical_utilisation_df_summary.index:
-                row = historical_utilisation_df_summary.loc[callsign_str]
+            if (
+                callsign_str
+                in historical_results_obj.historical_utilisation_df_summary.index
+            ):
+                row = historical_results_obj.historical_utilisation_df_summary.loc[
+                    callsign_str
+                ]
                 min_val = row["min"] / 100.0  # Convert percentage to 0-1 scale
                 max_val = row["max"] / 100.0
                 mean_val = row["mean"] / 100.0
@@ -2839,11 +2829,13 @@ class TrialResults:
         return current_quarto_string
 
     def create_callsign_group_split_rwc_plot(
-        historical_data_path="historical_data/historical_monthly_totals_by_callsign.csv",
-        run_data_path="data/run_results.csv",
+        self,
+        historical_data_obj,
         x_is_callsign_group=False,
     ):
-        jobs_by_callsign = pd.read_csv(historical_data_path)
+        jobs_by_callsign = (
+            historical_data_obj.historical_monthly_totals_by_callsign.copy()
+        )
         jobs_by_callsign["month"] = pd.to_datetime(
             jobs_by_callsign["month"], format="ISO8601"
         )
@@ -2869,10 +2861,9 @@ class TrialResults:
         )
         jobs_by_callsign_group_hist["what"] = "Historical"
 
-        jobs_by_callsign_sim = pd.read_csv(run_data_path)
-        jobs_by_callsign_sim = jobs_by_callsign_sim[
-            jobs_by_callsign_sim["event_type"] == "resource_use"
-        ][["run_number", "P_ID", "time_type", "qtr"]]
+        jobs_by_callsign_sim = self.resource_use_events_only_df[
+            ["run_number", "P_ID", "time_type", "qtr"]
+        ].copy()
         jobs_by_callsign_sim["callsign_group"] = jobs_by_callsign_sim[
             "time_type"
         ].str.extract(r"(\d+)")
@@ -4122,14 +4113,24 @@ class TrialResults:
             (row_of_interest["max"].values[0] / run_duration_days) * 365,
         )
 
-    # TODO: Find out what the two input dataframes are
     def plot_missed_calls_boxplot(
-        df_sim_breakdown,
-        df_hist_breakdown,
+        self,
+        historical_results_obj,
         what="breakdown",
         historical_yearly_missed_calls_estimate=None,
     ):
-        full_df = pd.concat([df_sim_breakdown, df_hist_breakdown])
+        self.missed_jobs_per_run_breakdown["what"] = "Simulation"
+
+        historical_results_obj.SIM_hist_missed_care_cat_breakdown["what"] = (
+            "Historical (Simulated with Historical Rotas)"
+        )
+
+        full_df = pd.concat(
+            [
+                self.missed_jobs_per_run_breakdown,
+                historical_results_obj.SIM_hist_missed_care_cat_breakdown,
+            ]
+        )
 
         full_df_no_resource_avail = full_df[
             full_df["time_type"] == "No Resource Available"

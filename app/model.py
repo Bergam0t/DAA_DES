@@ -619,166 +619,151 @@ If the simulation is not using the default parameters, we would not expect the o
     wish to consider the historical split as part of your decision making.
                 """)
 
-#                 st.plotly_chart(
-#                     _utilisation_result_calculation.make_SIMULATION_utilisation_summary_plot(
-#                         utilisation_df_overall, historical_utilisation_df_summary
-#                     )
-#                 )
+                st.plotly_chart(
+                    trial_results.PLOT_SIMULATION_utilisation_summary(
+                        historical_results_obj=historical_data
+                    )
+                )
 
-#                 st.plotly_chart(
-#                     _utilisation_result_calculation.make_SIMULATION_utilisation_variation_plot(
-#                         utilisation_df_per_run, historical_utilisation_df_summary
-#                     )
-#                 )
+                st.plotly_chart(
+                    trial_results.make_SIMULATION_utilisation_variation_plot(
+                        historical_results_obj=historical_data
+                    )
+                )
 
-#                 with tab_2_3:
+                with tab_2_3:
 
-#                     @st.fragment
-#                     def plot_callsign_group_split():
-#                         x_is_callsign_group = st.toggle(
-#                             "Plot callsign group on the horizontal axis", value=False
-#                         )
+                    @st.fragment
+                    def plot_callsign_group_split():
+                        x_is_callsign_group = st.toggle(
+                            "Plot callsign group on the horizontal axis", value=False
+                        )
 
-#                         st.plotly_chart(
-#                             _utilisation_result_calculation.create_callsign_group_split_rwc_plot(
-#                                 x_is_callsign_group=x_is_callsign_group
-#                             )
-#                         )
+                        st.plotly_chart(
+                            trial_results.create_callsign_group_split_rwc_plot(
+                                historical_data_obj=historical_data,
+                                x_is_callsign_group=x_is_callsign_group,
+                            )
+                        )
 
-#                     plot_callsign_group_split()
+                    plot_callsign_group_split()
 
-#                 with tab_2_4:
-#                     st.caption("""
-# Historical data has been retrospectively audited to determine when jobs have included interventions that
-# could only be delivered by an EC or CC team.
+                with tab_2_4:
+                    st.caption("""
+Historical data has been retrospectively audited to determine when jobs have included interventions that
+could only be delivered by an EC or CC team.
 
-# This has then been used to inform the rate at which jobs with an EC or CC benefit are generated in the simulation.
+This has then been used to inform the rate at which jobs with an EC or CC benefit are generated in the simulation.
 
-# While the numbers are low, it does not include a wide range of additional benefits that HEMS crews
-# bring to the scene. Work is now underway to improve the capture of these additional benefits, but
-# they are not reflected in the model.
+While the numbers are low, it does not include a wide range of additional benefits that HEMS crews
+bring to the scene. Work is now underway to improve the capture of these additional benefits, but
+they are not reflected in the model.
 
-# For the model, it has been assumed that the split of CC calls, EC calls and calls where no CC or EC intervention
-# is delivered is consistent across the day. We do not have access to this data for time where jobs have not historically
-# been attended due to no resource being in service.
+For the model, it has been assumed that the split of CC calls, EC calls and calls where no CC or EC intervention
+is delivered is consistent across the day. We do not have access to this data for time where jobs have not historically
+been attended due to no resource being in service.
 
-# It is also assumed that the split of care categories is consistent across the year.
+It is also assumed that the split of care categories is consistent across the year.
 
-# This data is affected by the fact that the historical actions will be affected by the crew that attended, and reflect
-# care delivered rather than ideal care. For example, if an EC crew attended a job that would benefit
-# from a CC intervention (due to no CC crew being on shift or the CC crew already being on another job),
-# only EC interventions would be delivered and only an EC benefit would have been recorded in the
-# dataset.
-# """)
+This data is affected by the fact that the historical actions will be affected by the crew that attended, and reflect
+care delivered rather than ideal care. For example, if an EC crew attended a job that would benefit
+from a CC intervention (due to no CC crew being on shift or the CC crew already being on another job),
+only EC interventions would be delivered and only an EC benefit would have been recorded in the
+dataset.
+""")
 
-#                     df_sim_breakdown = _job_outcome_calculation.get_missed_call_df(
-#                         results_all_runs, run_length_days=730, what="breakdown"
-#                     )
-#                     df_sim_breakdown["what"] = "Simulation"
+                    st.subheader(
+                        "Variation in projected missed calls across simulation runs"
+                    )
+                    st.write(
+                        "This is compared with an estimate of the missed calls per year by category using historic rotas"
+                    )
 
-#                     df_hist_breakdown = pd.read_csv(
-#                         "historical_data/calculated/SIM_hist_params_missed_jobs_care_cat_breakdown.csv"
-#                     )
-#                     df_hist_breakdown["what"] = (
-#                         "Historical (Simulated with Historical Rotas)"
-#                     )
-#                     st.subheader(
-#                         "Variation in projected missed calls across simulation runs"
-#                     )
-#                     st.write(
-#                         "This is compared with an estimate of the missed calls per year by category using historic rotas"
-#                     )
+                    st.plotly_chart(
+                        trial_results.plot_missed_calls_boxplot(
+                            historical_results_obj=historical_data
+                        )
+                    )
+                    tab_2_1.subheader(
+                        "Variation in missed calls across simulation runs"
+                    )
 
-#                     st.plotly_chart(
-#                         _job_outcome_calculation.plot_missed_calls_boxplot(
-#                             df_sim_breakdown, df_hist_breakdown
-#                         )
-#                     )
-#                     tab_2_1.subheader(
-#                         "Variation in missed calls across simulation runs"
-#                     )
+                    tab_2_1.plotly_chart(
+                        trial_results.plot_missed_calls_boxplot(
+                            historical_results_obj=historical_data,
+                            what="summary",
+                            historical_yearly_missed_calls_estimate=total_average_calls_received_per_year
+                            * (float(missed_calls_hist_string) / 100),
+                        )
+                    )
 
-#                     tab_2_1.plotly_chart(
-#                         _job_outcome_calculation.plot_missed_calls_boxplot(
-#                             df_sim_breakdown,
-#                             df_hist_breakdown,
-#                             what="summary",
-#                             historical_yearly_missed_calls_estimate=total_average_calls_received_per_year
-#                             * (float(missed_calls_hist_string) / 100),
-#                         )
-#                     )
+                    st.subheader("Job Categories - Simulation vs Historical")
 
-#                     st.subheader("Job Categories - Simulation vs Historical")
+                    @st.fragment
+                    def plot_cc_ec_split():
+                        show_proportions_care_cat_plot = st.toggle(
+                            "Show Proportions", True
+                        )
 
-#                     @st.fragment
-#                     def plot_cc_ec_split():
-#                         show_proportions_care_cat_plot = st.toggle(
-#                             "Show Proportions", True
-#                         )
+                        st.plotly_chart(
+                            trial_results.get_care_cat_counts_plot_sim(
+                                show_proportions=show_proportions_care_cat_plot
+                            )
+                        )
 
-#                         st.plotly_chart(
-#                             _job_outcome_calculation.get_care_cat_counts_plot_sim(
-#                                 show_proportions=show_proportions_care_cat_plot
-#                             )
-#                         )
+                        st.caption("""
+                        In this plot, we are predicting by the highest level of care provided.
+                        (e.g. a job marked as 'CC' may also deliver an EC intervention, or an EC job may
+                        also have a helicopter benefit)
+                        """)
 
-#                         st.caption("""
-#                         In this plot, we are predicting by the highest level of care provided.
-#                         (e.g. a job marked as 'CC' may also deliver an EC intervention, or an EC job may
-#                         also have a helicopter benefit)
-#                         """)
+                        st.plotly_chart(
+                            historical_data.PLOT_care_cat_counts_historic(
+                                show_proportions=show_proportions_care_cat_plot
+                            )
+                        )
 
-#                         st.plotly_chart(
-#                             _job_outcome_calculation.get_care_cat_counts_plot_historic(
-#                                 show_proportions=show_proportions_care_cat_plot
-#                             )
-#                         )
+                        st.caption("""
+                            We can also take a look at the proportion of jobs allocated to each category
+                            at a high level to confirm the model is reflecting the historical trends.
 
-#                         st.caption("""
-#                             We can also take a look at the proportion of jobs allocated to each category
-#                             at a high level to confirm the model is reflecting the historical trends.
+                            Note that for historic data, we have excluded jobs that were not attended (and therefore
+                            where the care category is not known) from the total number of jobs.
+                            """)
 
-#                             Note that for historic data, we have excluded jobs that were not attended (and therefore
-#                             where the care category is not known) from the total number of jobs.
-#                             """)
+                        st.dataframe(
+                            trial_results.get_care_cat_proportion_table().drop(
+                                columns=["Historic Job Counts", "Simulated Job Counts"]
+                            )
+                        )
 
-#                         st.dataframe(
-#                             _job_outcome_calculation.get_care_cat_proportion_table().drop(
-#                                 columns=["Historic Job Counts", "Simulated Job Counts"]
-#                             )
-#                         )
+                    plot_cc_ec_split()
 
-#                     plot_cc_ec_split()
+            with tab_2_5:
 
-#             with tab_2_5:
+                @st.fragment
+                def job_count_heatmap():
+                    normalise_heatmap_daily_jobs = st.toggle(
+                        "Normalise by average daily jobs", False
+                    )
 
-#                 @st.fragment
-#                 def job_count_heatmap():
-#                     normalise_heatmap_daily_jobs = st.toggle(
-#                         "Normalise by average daily jobs", False
-#                     )
+                    fig_jobs_by_callsign_heatmap = trial_results.PLOT_job_count_heatmap(
+                        normalise_per_day=normalise_heatmap_daily_jobs,
+                        simulated_days=st.session_state.sim_duration_input,
+                    )
 
-#                     fig_jobs_by_callsign_heatmap = (
-#                         _job_count_calculation.plot_job_count_heatmap(
-#                             run_results=results_all_runs,
-#                             normalise_per_day=normalise_heatmap_daily_jobs,
-#                             simulated_days=st.session_state.sim_duration_input,
-#                         )
-#                     )
+                    st.plotly_chart(fig_jobs_by_callsign_heatmap)
 
-#                     st.plotly_chart(fig_jobs_by_callsign_heatmap)
+                    fig_jobs_by_callsign_heatmap_monthly = (
+                        trial_results.PLOT_job_count_heatmap_monthly(
+                            normalise_per_day=normalise_heatmap_daily_jobs,
+                            simulated_days=st.session_state.sim_duration_input,
+                        )
+                    )
 
-#                     fig_jobs_by_callsign_heatmap_monthly = (
-#                         _job_count_calculation.plot_job_count_heatmap_monthly(
-#                             run_results=results_all_runs,
-#                             normalise_per_day=normalise_heatmap_daily_jobs,
-#                             simulated_days=st.session_state.sim_duration_input,
-#                         )
-#                     )
+                    st.plotly_chart(fig_jobs_by_callsign_heatmap_monthly)
 
-#                     st.plotly_chart(fig_jobs_by_callsign_heatmap_monthly)
-
-#                 job_count_heatmap()
+                job_count_heatmap()
 
 #         with tab3:
 #             # tab_3_1, tab_3_2, tab_3_3, tab_3_4, tab_3_5 = st.tabs([
