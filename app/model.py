@@ -765,134 +765,120 @@ dataset.
 
                 job_count_heatmap()
 
-#         with tab3:
-#             # tab_3_1, tab_3_2, tab_3_3, tab_3_4, tab_3_5 = st.tabs([
-#             tab_3_1, tab_3_2, tab_3_3, tab_3_4, tab_3_5, tab_3_6 = st.tabs(
-#                 [
-#                     "Jobs per Month",
-#                     "Jobs by Hour of Day",
-#                     "Jobs by Day of Week",
-#                     "Jobs per Day - Distribution",
-#                     "Job Durations - Overall",
-#                     "Job Durations - Split",
-#                 ]
-#             )
+        with tab3:
+            # tab_3_1, tab_3_2, tab_3_3, tab_3_4, tab_3_5 = st.tabs([
+            tab_3_1, tab_3_2, tab_3_3, tab_3_4, tab_3_5, tab_3_6 = st.tabs(
+                [
+                    "Jobs per Month",
+                    "Jobs by Hour of Day",
+                    "Jobs by Day of Week",
+                    "Jobs per Day - Distribution",
+                    "Job Durations - Overall",
+                    "Job Durations - Split",
+                ]
+            )
 
-#             with tab_3_1:
+            with tab_3_1:
 
-#                 @st.fragment
-#                 def plot_monthly_jobs():
-#                     call_df = get_job_count_df()
+                @st.fragment
+                def plot_monthly_jobs():
+                    mj_1, mj_2 = st.columns(2)
 
-#                     mj_1, mj_2 = st.columns(2)
+                    show_real_data = mj_1.toggle(
+                        "Compare with Real Data", value=True, disabled=False
+                    )
 
-#                     show_real_data = mj_1.toggle(
-#                         "Compare with Real Data", value=True, disabled=False
-#                     )
+                    show_individual_runs = mj_2.toggle(
+                        "Show Individual Simulation Runs", value=False
+                    )
 
-#                     show_individual_runs = mj_2.toggle(
-#                         "Show Individual Simulation Runs", value=False
-#                     )
+                    if show_real_data:
+                        historical_view_method = st.radio(
+                            "Choose Historical Data Display Method",
+                            ["Range", "Individual Lines"],
+                            horizontal=True,
+                        )
+                        if historical_view_method == "Range":
+                            show_historical_individual_years = False
+                        else:
+                            show_historical_individual_years = True
+                    else:
+                        show_historical_individual_years = False
 
-#                     if show_real_data:
-#                         historical_view_method = st.radio(
-#                             "Choose Historical Data Display Method",
-#                             ["Range", "Individual Lines"],
-#                             horizontal=True,
-#                         )
-#                         if historical_view_method == "Range":
-#                             show_historical_individual_years = False
-#                         else:
-#                             show_historical_individual_years = True
-#                     else:
-#                         show_historical_individual_years = False
+                    fig_monthly_calls = trial_results.PLOT_monthly_calls(
+                        show_individual_runs=show_individual_runs,
+                        use_poppins=True,
+                        show_historical=show_real_data,
+                        show_historical_individual_years=show_historical_individual_years,
+                        job_count_col="inc_date",
+                    )
 
-#                     fig_monthly_calls = _job_count_calculation.plot_monthly_calls(
-#                         call_df,
-#                         show_individual_runs=show_individual_runs,
-#                         use_poppins=True,
-#                         show_historical=show_real_data,
-#                         show_historical_individual_years=show_historical_individual_years,
-#                         historical_monthly_job_data_path="historical_data/historical_monthly_totals_all_calls.csv",
-#                         job_count_col="inc_date",
-#                     )
+                    trial_results.PLOT_monthly_calls(
+                        show_individual_runs=show_individual_runs,
+                        use_poppins=False,
+                        show_historical=show_real_data,
+                        show_historical_individual_years=show_historical_individual_years,
+                        job_count_col="inc_date",
+                    ).write_html(
+                        "app/fig_outputs/fig_monthly_calls.html",
+                        full_html=False,
+                        include_plotlyjs="cdn",
+                    )  # , post_script = poppins_script)
 
-#                     _job_count_calculation.plot_monthly_calls(
-#                         call_df,
-#                         show_individual_runs=show_individual_runs,
-#                         use_poppins=False,
-#                         show_historical=show_real_data,
-#                         show_historical_individual_years=show_historical_individual_years,
-#                         historical_monthly_job_data_path="historical_data/historical_monthly_totals_all_calls.csv",
-#                         job_count_col="inc_date",
-#                     ).write_html(
-#                         "app/fig_outputs/fig_monthly_calls.html",
-#                         full_html=False,
-#                         include_plotlyjs="cdn",
-#                     )  # , post_script = poppins_script)
+                    return st.plotly_chart(fig_monthly_calls)
 
-#                     return st.plotly_chart(fig_monthly_calls)
+                plot_monthly_jobs()
+                st.caption("""
+Note that only full months in the simulation are included in this plot.
+Partial months are excluded for ease of interpretation.
+                           """)
 
-#                 plot_monthly_jobs()
-#                 st.caption("""
-# Note that only full months in the simulation are included in this plot.
-# Partial months are excluded for ease of interpretation.
-#                            """)
+            with tab_3_2:
 
-#             with tab_3_2:
+                @st.fragment
+                def plot_jobs_per_hour():
+                    help_jph = get_text("help_jobs_per_hour", text_df)
+                    jph_1, jph_2, jph_3, jph_4 = st.columns(4)
 
-#                 @st.fragment
-#                 def plot_jobs_per_hour():
-#                     call_df = get_job_count_df()
-#                     params_df = get_params_df()
-#                     help_jph = get_text("help_jobs_per_hour", text_df)
-#                     jph_1, jph_2, jph_3, jph_4 = st.columns(4)
+                    display_historic_jph = jph_1.toggle(
+                        "Display Historic Data", value=True
+                    )
+                    average_per_month = jph_2.toggle(
+                        "Display Average Calls Per Month", value=True, help=help_jph
+                    )
 
-#                     display_historic_jph = jph_1.toggle(
-#                         "Display Historic Data", value=True
-#                     )
-#                     average_per_month = jph_2.toggle(
-#                         "Display Average Calls Per Month", value=True, help=help_jph
-#                     )
+                    display_advanced = jph_3.toggle(
+                        "Display Advanced Plot", value=False
+                    )
 
-#                     display_advanced = jph_3.toggle(
-#                         "Display Advanced Plot", value=False
-#                     )
+                    if not display_advanced:
+                        display_error_bars_bar = jph_4.toggle("Display Variation")
+                    else:
+                        display_error_bars_bar = False
 
-#                     if not display_advanced:
-#                         display_error_bars_bar = jph_4.toggle("Display Variation")
-#                     else:
-#                         display_error_bars_bar = False
+                    fig_hour_of_day = trial_results.PLOT_hourly_call_counts(
+                        average_per_month=average_per_month,
+                        box_plot=display_advanced,
+                        show_error_bars_bar=display_error_bars_bar,
+                        use_poppins=True,
+                        show_historical=display_historic_jph,
+                    )
 
-#                     fig_hour_of_day = _job_count_calculation.plot_hourly_call_counts(
-#                         call_df,
-#                         params_df,
-#                         average_per_month=average_per_month,
-#                         box_plot=display_advanced,
-#                         show_error_bars_bar=display_error_bars_bar,
-#                         use_poppins=True,
-#                         show_historical=display_historic_jph,
-#                         historical_data_path="historical_data/historical_monthly_totals_by_hour_of_day.csv",
-#                     )
+                    trial_results.PLOT_hourly_call_counts(
+                        average_per_month=average_per_month,
+                        box_plot=display_advanced,
+                        show_error_bars_bar=display_error_bars_bar,
+                        use_poppins=False,
+                        show_historical=display_historic_jph,
+                    ).write_html(
+                        "app/fig_outputs/fig_hour_of_day.html",
+                        full_html=False,
+                        include_plotlyjs="cdn",
+                    )  # , post_script = poppins_script)
 
-#                     _job_count_calculation.plot_hourly_call_counts(
-#                         call_df,
-#                         params_df,
-#                         average_per_month=average_per_month,
-#                         box_plot=display_advanced,
-#                         show_error_bars_bar=display_error_bars_bar,
-#                         use_poppins=False,
-#                         show_historical=display_historic_jph,
-#                         historical_data_path="historical_data/historical_monthly_totals_by_hour_of_day.csv",
-#                     ).write_html(
-#                         "app/fig_outputs/fig_hour_of_day.html",
-#                         full_html=False,
-#                         include_plotlyjs="cdn",
-#                     )  # , post_script = poppins_script)
+                    st.plotly_chart(fig_hour_of_day)
 
-#                     st.plotly_chart(fig_hour_of_day)
-
-#                 plot_jobs_per_hour()
+                plot_jobs_per_hour()
 
 #             with tab_3_3:
 

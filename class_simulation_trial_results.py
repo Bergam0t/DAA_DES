@@ -683,7 +683,6 @@ class TrialResults:
         error_bar_colour="charcoal",
         show_error_bars_bar=True,
         show_historical=True,
-        historical_data_path="../actual_data/jobs_by_hour.csv",
     ) -> Figure:
         """
         Produces an interactive plot showing the number of calls that were received per hour in
@@ -695,7 +694,9 @@ class TrialResults:
         fig = go.Figure()
 
         if show_historical:
-            jobs_per_hour_historic = pd.read_csv(historical_data_path)
+            jobs_per_hour_historic = (
+                self.historical_data.historical_monthly_totals_by_hour_of_day.copy()
+            )
 
             jobs_per_hour_historic["month"] = pd.to_datetime(
                 jobs_per_hour_historic["month"], format="ISO8601"
@@ -922,7 +923,6 @@ class TrialResults:
         show_individual_runs=False,
         use_poppins=False,
         show_historical=False,
-        historical_monthly_job_data_path="../historical_data/historical_jobs_per_month.csv",
         show_historical_individual_years=False,
         job_count_col="total_jobs",
     ) -> Figure:
@@ -1036,22 +1036,11 @@ class TrialResults:
         )
 
         if show_historical:
-            historical_jobs_per_month = pd.read_csv(
-                historical_monthly_job_data_path, parse_dates=False
-            )
             # Convert to datetime
             # (using 'parse_dates=True' in read_csv isn't reliably doing that, so make it explicit here)
-            historical_jobs_per_month["month"] = pd.to_datetime(
-                historical_jobs_per_month["month"], format="ISO8601"
+            historical_jobs_per_month = (
+                self.historical_data.historical_monthly_totals_all_calls.copy()
             )
-
-            historical_jobs_per_month["Month_Numeric"] = historical_jobs_per_month[
-                "month"
-            ].apply(lambda x: x.month)
-
-            historical_jobs_per_month["Year_Numeric"] = historical_jobs_per_month[
-                "month"
-            ].apply(lambda x: x.year)
 
             historical_summary = (
                 historical_jobs_per_month.groupby("Month_Numeric")[job_count_col]
@@ -1776,7 +1765,7 @@ class TrialResults:
         )
 
         grouped = (
-            run_results.groupby(["month", "hour", "time_type"])
+            run_results.groupby(["month", "hour", "time_type"], observed=False)
             .size()
             .reindex(full_index, fill_value=0)
             .reset_index(name="count")
@@ -1848,7 +1837,7 @@ class TrialResults:
 
         return fig
 
-    def plot_jobs_per_callsign(self, historical_data_class):
+    def plot_jobs_per_callsign(self, historical_data_obj):
         # Create a count of the number of days in the sim that each resource had that many jobs
         # i.e. how many days did CC70 have 0 jobs, 1 job, 2 jobs, etc.
         df = self.run_results.copy()
@@ -1892,7 +1881,7 @@ class TrialResults:
 
         # Bring in historical data
         jobs_per_day_per_callsign_historical = (
-            self.historical_data.historical_jobs_per_day_per_callsign.copy()
+            historical_data_obj.historical_jobs_per_day_per_callsign.copy()
         )
 
         jobs_per_day_per_callsign_historical["what"] = "Historical"
