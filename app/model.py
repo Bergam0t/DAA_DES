@@ -588,7 +588,9 @@ In this case, we would be looking for two things to be consistent across the top
                     fig_utilisation = trial_results.PLOT_UTIL_rwc_plot()
 
                     fig_utilisation.write_html(
-                        "app/fig_outputs/fig_utilisation.html"
+                        "app/fig_outputs/fig_utilisation.html",
+                        full_html=False,
+                        include_plotlyjs="cdn",
                     )  # , post_script = poppins_script)#,full_html=False, include_plotlyjs='cdn')
 
                     st.plotly_chart(fig_utilisation)
@@ -1063,529 +1065,414 @@ These stages are shown for two types of vehicles:
 - If the boxes and whiskers for simulated and historical data overlap a lot, that means the simulation is doing a good job of copying reality.
                            """)
 
-#         with tab4:
-#             st.caption("""
-# This tab contains visualisations to help model authors do additional checks into the underlying functioning of the model.
-
-# Most users will not need to look at the visualisations in this tab.
-#             """)
-
-#             # tab_4_1, tab_4_2, tab_4_3, tab_4_4, tab_4_5 = st.tabs(["Debug Resources", "Debug Events", "Debug Outcomes",
-#             #                                               "Process Analytics", "Process Analytics - Resources"
-#             #                                               ])
-
-#             tab_4_1, tab_4_2, tab_4_3, tab_4_4 = st.tabs(
-#                 [
-#                     "Debug Resources",
-#                     "Debug Events",
-#                     "Debug Outcomes",
-#                     "Debug Job Durations",
-#                 ]
-#             )
-
-#             with tab_4_1:
-#                 resource_use_events_only = (
-#                     results_all_runs[
-#                         (results_all_runs["event_type"] == "resource_use")
-#                         | (results_all_runs["event_type"] == "resource_use_end")
-#                     ]
-#                     .reset_index(drop=True)
-#                     .copy()
-#                 )
-
-#                 # Call the refactored function
-#                 # Ensure DAA_COLORSCHEME is defined and passed
-#                 _resource_use_exploration.display_resource_use_exploration(
-#                     resource_use_events_only, results_all_runs, DAA_COLORSCHEME
-#                 )
-
-#                 st.caption("""
-# This visual shows the resource use of each resource throughout the simulation.
-
-# Grey hatched boxes indicate the time the resource was away for servicing.
-
-# - For H70 (g-daas), it is assumed that H71 (g-daan) will be reallocated the callsign H70 during the
-# service period for g-daas. Therefore, for the H70 line, we would expect calls to continue being allocated
-# to H70 during its service period, **but we would expect H71 to consequently show no activity in that period.**
-
-# - For the servicing of H71 (g-daan), it is assumed that g-daan will be unavailable during that period
-# and no callsign reallocation will occur, so we would anticipate no activity occurring for H71 during that period.
-
-# CC70 and CC71 are backup vehicles, for use in the event that their associated helicopter cannot fly
-# for any reason (pilot unavailability, servicing, etc.).
-
-# It should be the case that resources from the same callsign group (H70 & CC70, H71 & CC71) cannot ever be allocated
-# to a job at the same time, as it is assumed that a single crew is available for each callsign group.
-
-# Unavailability of cars due to servicing is not modelled; cars are assumed to always be available.
-
-# *The handles at the bottom of the plot can be used to zoom in to a shorter period of time, allowing
-# you to more clearly see patterns of resource use. The '1m, 6m, YTD, 1y' buttons at the top of the plot
-# can also be used to adjust the chosen time period. Double click on the plot or click on the 'reset axes'
-# button at the top right - which will only appear when hovering over the plot - to reset to looking at
-# the overall time period.*
-#             """)
-
-#                 st.subheader("Jobs per Day - By Callsign")
-
-#                 st.plotly_chart(_job_count_calculation.plot_jobs_per_callsign())
-
-#                 st.subheader("Minutes per day on Shift")
-
-#                 daily_availability_df = (
-#                     pd.read_csv("data/daily_availability.csv")
-#                     .melt(id_vars="month")
-#                     .rename(
-#                         columns={
-#                             "value": "theoretical_availability",
-#                             "variable": "callsign",
-#                         }
-#                     )
-#                 )
-
-#                 st.plotly_chart(
-#                     px.bar(
-#                         daily_availability_df,
-#                         x="month",
-#                         y="theoretical_availability",
-#                         facet_row="callsign",
-#                     )
-#                 )
-
-#                 st.subheader("Jobs Outcome by Category/Preference")
-
-#                 @st.fragment
-#                 def plot_preferred_outcome_by_hour():
-#                     show_proportions_job_outcomes_by_hour = st.toggle(
-#                         "Show Proportions",
-#                         False,
-#                         key="show_proportions_job_outcomes_by_hour",
-#                     )
-#                     st.plotly_chart(
-#                         _job_outcome_calculation.get_preferred_outcome_by_hour(
-#                             show_proportions=show_proportions_job_outcomes_by_hour
-#                         )
-#                     )
-
-#                 plot_preferred_outcome_by_hour()
-
-#                 st.plotly_chart(
-#                     _job_outcome_calculation.get_facet_plot_preferred_outcome_by_hour()
-#                 )
-
-#             with tab_4_2:
-#                 st.subheader("Event Overview")
-
-#                 # @st.fragment
-#                 # def event_overview_plot():
-#                 #     runs_to_display_eo = st.multiselect("Choose the runs to display", results_all_runs["run_number"].unique(), default=1)
-
-#                 #     events_over_time_df = results_all_runs[results_all_runs["run_number"].isin(runs_to_display_eo)]
-
-#                 #     # Fix to deal with odd community cloud indexing bug
-#                 #     if 'P_ID' not in events_over_time_df.columns:
-#                 #         events_over_time_df = events_over_time_df.reset_index()
-
-#                 #     events_over_time_df['time_type'] = events_over_time_df['time_type'].astype('str')
-
-#                 #     fig = px.scatter(
-#                 #             events_over_time_df,
-#                 #             x="timestamp_dt",
-#                 #             y="time_type",
-#                 #             # facet_row="run_number",
-#                 #             # showlegend=False,
-#                 #             color="time_type",
-#                 #             height=800,
-#                 #             title="Events Over Time - By Run"
-#                 #             )
-
-#                 #     fig.update_traces(marker=dict(size=3, opacity=0.5))
-
-#                 #     fig.update_layout(yaxis_title="", # Remove y-axis label
-#                 #                       yaxis_type='category',
-#                 #                       showlegend=False)
-#                 #     # Remove facet labels
-#                 #     fig.for_each_annotation(lambda x: x.update(text=""))
-
-#                 #     st.plotly_chart(
-#                 #         fig,
-#                 #             use_container_width=True
-#                 #         )
-
-#                 # event_overview_plot()
-
-#                 # Fix to deal with odd community cloud indexing bug
-#                 if "P_ID" not in results_all_runs.columns:
-#                     results_all_runs = results_all_runs.reset_index()
-
-#                 st.plotly_chart(
-#                     px.line(
-#                         results_all_runs[results_all_runs["time_type"] == "arrival"],
-#                         x="timestamp_dt",
-#                         y="P_ID",
-#                         color="run_number",
-#                         height=800,
-#                         title="Cumulative Arrivals Per Run",
-#                     ),
-#                     use_container_width=True,
-#                 )
-
-#                 st.subheader("Event Counts")
-#                 st.write(f"Period: {st.session_state.sim_duration_input} days")
-
-#                 event_counts_df = (
-#                     pd.DataFrame(
-#                         results_all_runs[["run_number", "time_type"]].value_counts()
-#                     )
-#                     .reset_index()
-#                     .pivot(index="run_number", columns="time_type", values="count")
-#                 )
-#                 event_counts_long = event_counts_df.reset_index(drop=False).melt(
-#                     id_vars="run_number"
-#                 )
-
-#                 @st.fragment
-#                 def event_funnel_plot():
-#                     hems_events_initial = [
-#                         "arrival",
-#                         "HEMS call start",
-#                         "HEMS allocated to call",
-#                         "HEMS mobile",
-#                         # "HEMS stood down en route",
-#                         "HEMS on scene",
-#                         # "HEMS patient treated (not conveyed)",
-#                         "HEMS leaving scene",
-#                         "HEMS arrived destination",
-#                         "HEMS clear",
-#                     ]
-
-#                     hems_events = st.multiselect(
-#                         "Choose the events to show",
-#                         event_counts_long["time_type"].unique(),
-#                         hems_events_initial,
-#                     )
-
-#                     run_select = st.multiselect(
-#                         "Choose the runs to show",
-#                         event_counts_long["run_number"].unique(),
-#                         1,
-#                     )
-
-#                     return st.plotly_chart(
-#                         px.funnel(
-#                             event_counts_long[
-#                                 (event_counts_long["time_type"].isin(hems_events))
-#                                 & (event_counts_long["run_number"].isin(run_select))
-#                             ],
-#                             facet_col="run_number",
-#                             x="value",
-#                             y="time_type",
-#                             category_orders={"time_type": hems_events[::-1]},
-#                         )
-#                     )
-
-#                 event_funnel_plot()
-
-#                 @st.fragment
-#                 def patient_viz():
-#                     st.subheader("Per-patient journey exploration")
-
-#                     patient_filter = st.selectbox(
-#                         "Select a patient", results_all_runs.P_ID.unique()
-#                     )
-
-#                     tab_list = st.tabs(
-#                         [
-#                             f"Run {i + 1}"
-#                             for i in range(st.session_state.number_of_runs_input)
-#                         ]
-#                     )
-
-#                     for idx, tab in enumerate(tab_list):
-#                         p_df = results_all_runs[
-#                             (results_all_runs.P_ID == patient_filter)
-#                             & (results_all_runs.run_number == idx + 1)
-#                         ]
-
-#                         p_df["time_type"] = p_df["time_type"].astype("str")
-
-#                         fig = px.scatter(
-#                             p_df, x="timestamp_dt", y="time_type", color="time_type"
-#                         )
-
-#                         fig.update_layout(yaxis_type="category")
-
-#                         tab.plotly_chart(
-#                             fig,
-#                             use_container_width=True,
-#                             key=f"p_viz_{patient_filter}_{idx}",
-#                         )
-
-#                 patient_viz()
-
-#             with tab_4_3:
-
-#                 @st.fragment
-#                 def explore_outcomes():
-#                     plot_counts = st.toggle("Plot Counts", value=False)
-
-#                     st.caption(
-#                         "Note that these plots only cover patients for whom a resource was available to attend"
-#                     )
-
-#                     st.subheader("HEMS result by vehicle type")
-#                     try:
-#                         st.plotly_chart(
-#                             _job_outcome_calculation.plot_patient_outcomes(
-#                                 df=results_all_runs, plot_counts=plot_counts
-#                             )
-#                         )
-#                     except:
-#                         st.write("Error generating chart")
-
-#                     st.subheader("HEMS result by care category")
-#                     try:
-#                         st.plotly_chart(
-#                             _job_outcome_calculation.plot_patient_outcomes(
-#                                 df=results_all_runs,
-#                                 plot_counts=plot_counts,
-#                                 group_cols="care_cat",
-#                             )
-#                         )
-#                     except:
-#                         st.write("Error generating chart")
-
-#                     st.subheader("HEMS Result by Outcome")
-#                     st.caption(
-#                         "Note this sums to 1 within each outcome, not within each hems result"
-#                     )
-#                     try:
-#                         st.plotly_chart(
-#                             _job_outcome_calculation.plot_patient_outcomes(
-#                                 df=results_all_runs,
-#                                 plot_counts=plot_counts,
-#                                 group_cols="outcome",
-#                             )
-#                         )
-#                     except:
-#                         st.write("Error generating chart")
-
-#                     st.subheader("Outcome by Vehicle Type")
-#                     try:
-#                         st.plotly_chart(
-#                             _job_outcome_calculation.plot_patient_outcomes(
-#                                 df=results_all_runs,
-#                                 group_cols="vehicle_type",
-#                                 outcome_col="outcome",
-#                                 plot_counts=plot_counts,
-#                             )
-#                         )
-#                     except:
-#                         st.write("Error generating chart")
-
-#                     st.subheader("Vehicle Type by Care Cat")
-#                     st.caption(
-#                         "Note this sums to 1 within each cat, not within each vehicle type"
-#                     )
-#                     try:
-#                         st.plotly_chart(
-#                             _job_outcome_calculation.plot_patient_outcomes(
-#                                 df=results_all_runs,
-#                                 outcome_col="vehicle_type",
-#                                 group_cols="care_cat",
-#                                 plot_counts=plot_counts,
-#                             )
-#                         )
-#                     except:
-#                         st.write("Error generating chart")
-
-#                     st.header("Outcome variation across day")
-
-#                     try:
-#                         hourly_hems_result_counts = (
-#                             results_all_runs[
-#                                 results_all_runs["time_type"] == "HEMS call start"
-#                             ]
-#                             .groupby(["hems_result", "hour"])
-#                             .size()
-#                             .reset_index(name="count")
-#                         )
-#                         total_per_group = hourly_hems_result_counts.groupby("hour")[
-#                             "count"
-#                         ].transform("sum")
-#                         hourly_hems_result_counts["proportion"] = (
-#                             hourly_hems_result_counts["count"] / total_per_group
-#                         )
-
-#                         if plot_counts:
-#                             y_col_hourly_hems_result = "count"
-#                         else:
-#                             y_col_hourly_hems_result = "proportion"
-
-#                         st.plotly_chart(
-#                             px.bar(
-#                                 hourly_hems_result_counts,
-#                                 x="hour",
-#                                 y=y_col_hourly_hems_result,
-#                                 color="hems_result",
-#                             )
-#                         )
-#                     except:
-#                         st.write("Error generating chart")
-
-#                 explore_outcomes()
-
-#             with tab_4_4:
-#                 st.subheader("Duration by HEMS Outcome and Vehicle Type")
-#                 st.caption(
-#                     "Outcomes are sorted by the average job duration (shortest first)"
-#                 )
-#                 st.plotly_chart(
-#                     _job_time_calcs.plot_total_times_by_hems_or_pt_outcome(
-#                         results_all_runs,
-#                         y="hems_result",
-#                         color="vehicle_type",
-#                         column_of_interest="hems_result",
-#                         show_group_averages=True,
-#                     )
-#                 )
-
-#                 st.markdown("#### Per-vehicle focus")
-#                 st.plotly_chart(
-#                     _job_time_calcs.plot_total_times_by_hems_or_pt_outcome(
-#                         results_all_runs,
-#                         y="vehicle_type",
-#                         color="hems_result",
-#                         column_of_interest="hems_result",
-#                         show_group_averages=False,
-#                     )
-#                 )
-
-#                 st.divider()
-
-#                 st.subheader("Duration by Patient Outcome and Vehicle Type")
-#                 st.caption(
-#                     "Outcomes are sorted by the average job duration (shortest first)"
-#                 )
-
-#                 st.plotly_chart(
-#                     _job_time_calcs.plot_total_times_by_hems_or_pt_outcome(
-#                         results_all_runs,
-#                         y="outcome",
-#                         color="vehicle_type",
-#                         column_of_interest="outcome",
-#                         show_group_averages=True,
-#                     )
-#                 )
-
-#                 st.markdown("#### Per-vehicle focus")
-
-#                 st.plotly_chart(
-#                     _job_time_calcs.plot_total_times_by_hems_or_pt_outcome(
-#                         results_all_runs,
-#                         y="vehicle_type",
-#                         color="outcome",
-#                         column_of_interest="outcome",
-#                         show_group_averages=False,
-#                     )
-#                 )
-
-#             # with tab_4_4:
-#             #     _process_analytics.create_event_log("data/run_results.csv")
-
-#             #     print("Current working directory:", os.getcwd())
-
-#             #     # This check is a way to guess whether it's running on
-#             #     # Streamlit community cloud
-#             #     if platform.processor() == '':
-#             #         try:
-#             #             process1 = subprocess.Popen(["Rscript", "app/generate_bupar_outputs.R"],
-#             #                                         stdout=subprocess.PIPE,
-#             #                                         stderr=subprocess.PIPE,
-#             #                                         text=True,
-#             #                                         cwd="app")
-
-#             #         except:
-#             #             # Get absolute path to the R script
-#             #             script_path = Path(__file__).parent / "generate_bupar_outputs.R"
-#             #             st.write(f"Trying path: {script_path}" )
-
-#             #             process1 = subprocess.Popen(["Rscript", str(script_path)],
-#             #                                         stdout=subprocess.PIPE,
-#             #                                         stderr=subprocess.PIPE,
-#             #                                         text=True)
-
-#             #     else:
-#             #         result = subprocess.run(["Rscript", "app/generate_bupar_outputs.R"],
-#             #                                 capture_output=True, text=True)
-#             #     try:
-#             #         st.subheader("Process - Absolute Frequency")
-#             #         st.image("visualisation/absolute_frequency.svg")
-#             #     except:
-#             #         st.warning("Process maps could not be generated")
-
-#             #     try:
-#             #         # st.html("visualisation/anim_process.html")
-#             #         components.html("visualisation/anim_process.html")
-#             #     except:
-#             #         st.warning("Animated Process maps could not be generated")
-
-#             #     try:
-#             #         # st.subheader("Process - Absolute Cases")
-#             #         # st.image("visualisation/absolute_case.svg")
-
-#             #         st.subheader("Performance - Average (Mean) Transition and Activity Times")
-#             #         st.image("visualisation/performance_mean.svg")
-
-#             #         st.subheader("Performance - Maximum Transition and Activity Times")
-#             #         st.image("visualisation/performance_max.svg")
-
-#             #         st.subheader("Activity - Processing Time - activity")
-#             #         st.image("visualisation/processing_time_activity.svg")
-
-#             #         st.subheader("Activity - Processing Time - Resource/Activity")
-#             #         st.image("visualisation/processing_time_resource_activity.svg")
-#             #     except:
-#             #         st.warning("Process maps could not be generated")
-
-#             # with tab_4_5:
-#             #     try:
-#             #         st.subheader("Activities - by Resource")
-#             #         st.image("visualisation/relative_resource_level.svg")
-#             #     except:
-#             #         st.warning("Animated process maps could not be generated")
-
-#             #     try:
-#             #         # st.html("visualisation/anim_resource_level.html")
-#             #         components.html("visualisation/anim_resource_level.html")
-#             #     except:
-#             #         st.warning("Animated process maps could not be generated")
-
-#         with tab5:
-
-#             @st.fragment()
-#             def generate_report_button():
-#                 if st.button("Click here to generate the downloadable report"):
-#                     report_message.info("Generating Report...")
-#                     with st.spinner(
-#                         "Generating report. This may take a minute...", show_time=True
-#                     ):
-#                         try:
-#                             with open(
-#                                 "app/fig_outputs/quarto_text.txt", "w"
-#                             ) as text_file:
-#                                 text_file.write(quarto_string)
-
-#                             msg = _app_utils.generate_quarto_report(
-#                                 run_quarto_check=False
-#                             )
-
-#                             if msg == "success":
-#                                 st.success("Report Available for Download")
-
-#                         except Exception as e:  # noqa
-#                             st.error(
-#                                 "Report cannot be generated - please speak to a developer"
-#                             )
-
-#             generate_report_button()
+        with tab4:
+            st.caption("""
+This tab contains visualisations to help model authors do additional checks into the underlying functioning of the model.
+
+Most users will not need to look at the visualisations in this tab.
+            """)
+
+            # tab_4_1, tab_4_2, tab_4_3, tab_4_4, tab_4_5 = st.tabs(["Debug Resources", "Debug Events", "Debug Outcomes",
+            #                                               "Process Analytics", "Process Analytics - Resources"
+            #                                               ])
+
+            tab_4_1, tab_4_2, tab_4_3, tab_4_4 = st.tabs(
+                [
+                    "Debug Resources",
+                    "Debug Events",
+                    "Debug Outcomes",
+                    "Debug Job Durations",
+                ]
+            )
+
+            with tab_4_1:
+                trial_results.display_resource_use_exploration()
+
+                st.caption("""
+This visual shows the resource use of each resource throughout the simulation.
+
+Grey hatched boxes indicate the time the resource was away for servicing.
+
+- For H70 (g-daas), it is assumed that H71 (g-daan) will be reallocated the callsign H70 during the
+service period for g-daas. Therefore, for the H70 line, we would expect calls to continue being allocated
+to H70 during its service period, **but we would expect H71 to consequently show no activity in that period.**
+
+- For the servicing of H71 (g-daan), it is assumed that g-daan will be unavailable during that period
+and no callsign reallocation will occur, so we would anticipate no activity occurring for H71 during that period.
+
+CC70 and CC71 are backup vehicles, for use in the event that their associated helicopter cannot fly
+for any reason (pilot unavailability, servicing, etc.).
+
+It should be the case that resources from the same callsign group (H70 & CC70, H71 & CC71) cannot ever be allocated
+to a job at the same time, as it is assumed that a single crew is available for each callsign group.
+
+Unavailability of cars due to servicing is not modelled; cars are assumed to always be available.
+
+*The handles at the bottom of the plot can be used to zoom in to a shorter period of time, allowing
+you to more clearly see patterns of resource use. The '1m, 6m, YTD, 1y' buttons at the top of the plot
+can also be used to adjust the chosen time period. Double click on the plot or click on the 'reset axes'
+button at the top right - which will only appear when hovering over the plot - to reset to looking at
+the overall time period.*
+            """)
+
+                st.subheader("Jobs per Day - By Callsign")
+
+                st.plotly_chart(trial_results.PLOT_jobs_per_callsign())
+
+                st.subheader("Minutes per day on Shift")
+
+                st.plotly_chart(trial_results.PLOT_daily_availability())
+
+                st.subheader("Jobs Outcome by Category/Preference")
+
+                @st.fragment
+                def plot_preferred_outcome_by_hour():
+                    show_proportions_job_outcomes_by_hour = st.toggle(
+                        "Show Proportions",
+                        False,
+                        key="show_proportions_job_outcomes_by_hour",
+                    )
+                    st.plotly_chart(
+                        trial_results.get_preferred_outcome_by_hour(
+                            show_proportions=show_proportions_job_outcomes_by_hour
+                        )
+                    )
+
+                plot_preferred_outcome_by_hour()
+
+                st.plotly_chart(
+                    trial_results.get_facet_plot_preferred_outcome_by_hour()
+                )
+
+            with tab_4_2:
+                st.subheader("Event Overview")
+
+                @st.fragment
+                def event_overview_plot():
+                    runs_to_display_eo = st.multiselect(
+                        "Choose the runs to display",
+                        trial_results.run_results["run_number"].unique(),
+                        default=1,
+                    )
+
+                    st.plotly_chart(
+                        trial_results.PLOT_events_over_time(runs=runs_to_display_eo),
+                        use_container_width=True,
+                    )
+
+                event_overview_plot()
+
+                #                 # Fix to deal with odd community cloud indexing bug
+                #                 if "P_ID" not in results_all_runs.columns:
+                #                     results_all_runs = results_all_runs.reset_index()
+
+                st.plotly_chart(
+                    trial_results.PLOT_cumulative_arrivals_per_run(),
+                    use_container_width=True,
+                )
+
+                st.subheader("Event Counts")
+                st.write(f"Period: {st.session_state.sim_duration_input} days")
+
+                @st.fragment
+                def event_funnel_plot():
+                    hems_events_initial = [
+                        "arrival",
+                        "HEMS call start",
+                        "HEMS allocated to call",
+                        "HEMS mobile",
+                        # "HEMS stood down en route",
+                        "HEMS on scene",
+                        # "HEMS patient treated (not conveyed)",
+                        "HEMS leaving scene",
+                        "HEMS arrived destination",
+                        "HEMS clear",
+                    ]
+
+                    hems_events = st.multiselect(
+                        "Choose the events to show",
+                        trial_results.event_counts_long["time_type"].unique(),
+                        hems_events_initial,
+                    )
+
+                    run_select = st.multiselect(
+                        "Choose the runs to show",
+                        trial_results.event_counts_long["run_number"].unique(),
+                        1,
+                    )
+
+                    st.plotly_chart(
+                        trial_results.PLOT_event_funnel_plot(hems_events, run_select)
+                    )
+
+                event_funnel_plot()
+
+                @st.fragment
+                def patient_viz():
+                    st.subheader("Per-patient journey exploration")
+
+                    patient_filter = st.selectbox(
+                        "Select a patient", trial_results.run_results.P_ID.unique()
+                    )
+
+                    tab_list = st.tabs(
+                        [
+                            f"Run {i + 1}"
+                            for i in range(st.session_state.number_of_runs_input)
+                        ]
+                    )
+
+                    for idx, tab in enumerate(tab_list):
+                        p_df = trial_results.run_results[
+                            (trial_results.run_results.P_ID == patient_filter)
+                            & (trial_results.run_results.run_number == idx + 1)
+                        ]
+
+                        p_df["time_type"] = p_df["time_type"].astype("str")
+
+                        tab.plotly_chart(
+                            trial_results.PLOT_per_patient_events(p_df),
+                            use_container_width=True,
+                            key=f"p_viz_{patient_filter}_{idx}",
+                        )
+
+                patient_viz()
+
+            with tab_4_3:
+
+                @st.fragment
+                def explore_outcomes():
+                    plot_counts = st.toggle("Plot Counts", value=False)
+
+                    st.caption(
+                        "Note that these plots only cover patients for whom a resource was available to attend"
+                    )
+
+                    st.subheader("HEMS result by vehicle type")
+                    try:
+                        st.plotly_chart(
+                            trial_results.plot_patient_outcomes(plot_counts=plot_counts)
+                        )
+                    except:
+                        st.write("Error generating chart")
+
+                    st.subheader("HEMS result by care category")
+                    try:
+                        st.plotly_chart(
+                            trial_results.plot_patient_outcomes(
+                                plot_counts=plot_counts,
+                                group_cols="care_cat",
+                            )
+                        )
+                    except:
+                        st.write("Error generating chart")
+
+                    st.subheader("HEMS Result by Outcome")
+                    st.caption(
+                        "Note this sums to 1 within each outcome, not within each hems result"
+                    )
+                    try:
+                        st.plotly_chart(
+                            trial_results.plot_patient_outcomes(
+                                plot_counts=plot_counts,
+                                group_cols="outcome",
+                            )
+                        )
+                    except:
+                        st.write("Error generating chart")
+
+                    st.subheader("Outcome by Vehicle Type")
+                    try:
+                        st.plotly_chart(
+                            trial_results.plot_patient_outcomes(
+                                group_cols="vehicle_type",
+                                outcome_col="outcome",
+                                plot_counts=plot_counts,
+                            )
+                        )
+                    except:
+                        st.write("Error generating chart")
+
+                    st.subheader("Vehicle Type by Care Cat")
+                    st.caption(
+                        "Note this sums to 1 within each cat, not within each vehicle type"
+                    )
+                    try:
+                        st.plotly_chart(
+                            trial_results.plot_patient_outcomes(
+                                outcome_col="vehicle_type",
+                                group_cols="care_cat",
+                                plot_counts=plot_counts,
+                            )
+                        )
+                    except:
+                        st.write("Error generating chart")
+
+                    st.header("Outcome variation across day")
+
+                    try:
+                        if plot_counts:
+                            y_col_hourly_hems_result = "count"
+                        else:
+                            y_col_hourly_hems_result = "proportion"
+
+                        st.plotly_chart(
+                            trial_results.PLOT_outcome_variation_across_day(
+                                y_col=y_col_hourly_hems_result
+                            )
+                        )
+                    except:
+                        st.write("Error generating chart")
+
+                explore_outcomes()
+
+            with tab_4_4:
+                st.subheader("Duration by HEMS Outcome and Vehicle Type")
+                st.caption(
+                    "Outcomes are sorted by the average job duration (shortest first)"
+                )
+                st.plotly_chart(
+                    trial_results.plot_total_times_by_hems_or_pt_outcome(
+                        y="hems_result",
+                        color="vehicle_type",
+                        column_of_interest="hems_result",
+                        show_group_averages=True,
+                    )
+                )
+
+                st.markdown("#### Per-vehicle focus")
+                st.plotly_chart(
+                    trial_results.plot_total_times_by_hems_or_pt_outcome(
+                        y="vehicle_type",
+                        color="hems_result",
+                        column_of_interest="hems_result",
+                        show_group_averages=False,
+                    )
+                )
+
+                st.divider()
+
+                st.subheader("Duration by Patient Outcome and Vehicle Type")
+                st.caption(
+                    "Outcomes are sorted by the average job duration (shortest first)"
+                )
+
+                st.plotly_chart(
+                    trial_results.plot_total_times_by_hems_or_pt_outcome(
+                        y="outcome",
+                        color="vehicle_type",
+                        column_of_interest="outcome",
+                        show_group_averages=True,
+                    )
+                )
+
+                st.markdown("#### Per-vehicle focus")
+
+                st.plotly_chart(
+                    trial_results.plot_total_times_by_hems_or_pt_outcome(
+                        y="vehicle_type",
+                        color="outcome",
+                        column_of_interest="outcome",
+                        show_group_averages=False,
+                    )
+                )
+
+        #             # with tab_4_4:
+        #             #     _process_analytics.create_event_log("data/run_results.csv")
+
+        #             #     print("Current working directory:", os.getcwd())
+
+        #             #     # This check is a way to guess whether it's running on
+        #             #     # Streamlit community cloud
+        #             #     if platform.processor() == '':
+        #             #         try:
+        #             #             process1 = subprocess.Popen(["Rscript", "app/generate_bupar_outputs.R"],
+        #             #                                         stdout=subprocess.PIPE,
+        #             #                                         stderr=subprocess.PIPE,
+        #             #                                         text=True,
+        #             #                                         cwd="app")
+
+        #             #         except:
+        #             #             # Get absolute path to the R script
+        #             #             script_path = Path(__file__).parent / "generate_bupar_outputs.R"
+        #             #             st.write(f"Trying path: {script_path}" )
+
+        #             #             process1 = subprocess.Popen(["Rscript", str(script_path)],
+        #             #                                         stdout=subprocess.PIPE,
+        #             #                                         stderr=subprocess.PIPE,
+        #             #                                         text=True)
+
+        #             #     else:
+        #             #         result = subprocess.run(["Rscript", "app/generate_bupar_outputs.R"],
+        #             #                                 capture_output=True, text=True)
+        #             #     try:
+        #             #         st.subheader("Process - Absolute Frequency")
+        #             #         st.image("visualisation/absolute_frequency.svg")
+        #             #     except:
+        #             #         st.warning("Process maps could not be generated")
+
+        #             #     try:
+        #             #         # st.html("visualisation/anim_process.html")
+        #             #         components.html("visualisation/anim_process.html")
+        #             #     except:
+        #             #         st.warning("Animated Process maps could not be generated")
+
+        #             #     try:
+        #             #         # st.subheader("Process - Absolute Cases")
+        #             #         # st.image("visualisation/absolute_case.svg")
+
+        #             #         st.subheader("Performance - Average (Mean) Transition and Activity Times")
+        #             #         st.image("visualisation/performance_mean.svg")
+
+        #             #         st.subheader("Performance - Maximum Transition and Activity Times")
+        #             #         st.image("visualisation/performance_max.svg")
+
+        #             #         st.subheader("Activity - Processing Time - activity")
+        #             #         st.image("visualisation/processing_time_activity.svg")
+
+        #             #         st.subheader("Activity - Processing Time - Resource/Activity")
+        #             #         st.image("visualisation/processing_time_resource_activity.svg")
+        #             #     except:
+        #             #         st.warning("Process maps could not be generated")
+
+        #             # with tab_4_5:
+        #             #     try:
+        #             #         st.subheader("Activities - by Resource")
+        #             #         st.image("visualisation/relative_resource_level.svg")
+        #             #     except:
+        #             #         st.warning("Animated process maps could not be generated")
+
+        #             #     try:
+        #             #         # st.html("visualisation/anim_resource_level.html")
+        #             #         components.html("visualisation/anim_resource_level.html")
+        #             #     except:
+        #             #         st.warning("Animated process maps could not be generated")
+
+        with tab5:
+
+            @st.fragment()
+            def generate_report_button():
+                if st.button("Click here to generate the downloadable report"):
+                    report_message.info("Generating Report...")
+                    with st.spinner(
+                        "Generating report. This may take a minute...", show_time=True
+                    ):
+                        try:
+                            with open(
+                                "app/fig_outputs/quarto_text.txt", "w"
+                            ) as text_file:
+                                text_file.write(quarto_string)
+
+                            msg = _app_utils.generate_quarto_report(
+                                run_quarto_check=False
+                            )
+
+                            if msg == "success":
+                                st.success("Report Available for Download")
+
+                        except Exception as e:  # noqa
+                            st.error(
+                                "Report cannot be generated - please speak to a developer"
+                            )
+
+            generate_report_button()

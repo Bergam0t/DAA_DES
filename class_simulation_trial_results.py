@@ -150,6 +150,11 @@ class TrialResults:
 
         self.sim_averages_utilisation = None
 
+        self.daily_availability_df = None
+
+        self.event_counts_df = None
+        self.event_counts_long = None
+
         # Set fixed order for months
         self.month_order = (
             pd.date_range("2000-01-01", periods=12, freq="MS").strftime("%B").tolist()
@@ -186,9 +191,13 @@ class TrialResults:
         self.get_hourly_calls_per_run()
         # Create self.daily_calls_per_run
         self.get_daily_calls_per_run()
+        # Create self.daily_availability_df
+        self.get_daily_availability_df()
         # Create simulation event duration breakdown and summary
         self.create_simulation_event_duration_df()
         self.summarise_event_times()
+        # Create event_counts_df and event_counts_long
+        self.get_event_counts()
         # Create theoretical available resource time dataframe
         self.calculate_available_hours_v2(
             summer_start=int(
@@ -241,6 +250,18 @@ class TrialResults:
             .rename(columns={"time_type": "Count"})
             .reset_index()
             .rename(columns={"time_type": "Resource Allocation Attempt Outcome"})
+        )
+
+    def get_daily_availability_df(self):
+        self.daily_availability_df = (
+            pd.read_csv("data/daily_availability.csv")
+            .melt(id_vars="month")
+            .rename(
+                columns={
+                    "value": "theoretical_availability",
+                    "variable": "callsign",
+                }
+            )
         )
 
     def calculate_available_hours_v2(self, summer_start, summer_end):
@@ -1837,7 +1858,7 @@ class TrialResults:
 
         return fig
 
-    def plot_jobs_per_callsign(self, historical_data_obj):
+    def PLOT_jobs_per_callsign(self):
         # Create a count of the number of days in the sim that each resource had that many jobs
         # i.e. how many days did CC70 have 0 jobs, 1 job, 2 jobs, etc.
         df = self.run_results.copy()
@@ -1881,7 +1902,7 @@ class TrialResults:
 
         # Bring in historical data
         jobs_per_day_per_callsign_historical = (
-            historical_data_obj.historical_jobs_per_day_per_callsign.copy()
+            self.historical_data.historical_jobs_per_day_per_callsign.copy()
         )
 
         jobs_per_day_per_callsign_historical["what"] = "Historical"
@@ -4385,3 +4406,107 @@ reflect the patterns of demand observed historically.
                                 demand and may need adjustment.
                                 """
                 )
+
+    def PLOT_daily_availability(self):
+        return px.bar(
+            self.daily_availability_df,
+            x="month",
+            y="theoretical_availability",
+            facet_row="callsign",
+        )
+
+    def PLOT_events_over_time(self, runs=None):
+        events_over_time_df = self.run_results[
+            self.run_results["run_number"].isin(runs)
+        ]
+
+        # Fix to deal with odd community cloud indexing bug
+        if "P_ID" not in events_over_time_df.columns:
+            events_over_time_df = events_over_time_df.reset_index()
+
+        events_over_time_df["time_type"] = events_over_time_df["time_type"].astype(
+            "str"
+        )
+
+        fig = px.scatter(
+            events_over_time_df,
+            x="timestamp_dt",
+            y="time_type",
+            # facet_row="run_number",
+            # showlegend=False,
+            color="time_type",
+            height=800,
+            title="Events Over Time - By Run",
+        )
+
+        fig.update_traces(marker=dict(size=3, opacity=0.5))
+
+        fig.update_layout(
+            yaxis_title="",  # Remove y-axis label
+            yaxis_type="category",
+            showlegend=False,
+        )
+        # Remove facet labels
+        fig.for_each_annotation(lambda x: x.update(text=""))
+
+        return fig
+
+    def PLOT_cumulative_arrivals_per_run(self):
+        return px.line(
+            self.run_results[self.run_results["time_type"] == "arrival"],
+            x="timestamp_dt",
+            y="P_ID",
+            color="run_number",
+            height=800,
+            title="Cumulative Arrivals Per Run",
+        )
+
+    def get_event_counts(self):
+        self.event_counts_df = (
+            pd.DataFrame(self.run_results[["run_number", "time_type"]].value_counts())
+            .reset_index()
+            .pivot(index="run_number", columns="time_type", values="count")
+        )
+        self.event_counts_long = self.event_counts_df.reset_index(drop=False).melt(
+            id_vars="run_number"
+        )
+
+    def PLOT_event_funnel_plot(self, hems_events, run_select):
+        return px.funnel(
+            self.event_counts_long[
+                (self.event_counts_long["time_type"].isin(hems_events))
+                & (self.event_counts_long["run_number"].isin(run_select))
+            ],
+            facet_col="run_number",
+            x="value",
+            y="time_type",
+            category_orders={"time_type": hems_events[::-1]},
+        )
+
+    def PLOT_per_patient_events(self, patient_df):
+        fig = px.scatter(patient_df, x="timestamp_dt", y="time_type", color="time_type")
+
+        fig.update_layout(yaxis_type="category")
+
+        return fig
+
+    def PLOT_outcome_variation_across_day(self, y_col):
+        hourly_hems_result_counts = (
+            self.run_results[self.run_results["time_type"] == "HEMS call start"]
+            .groupby(["hems_result", "hour"])
+            .size()
+            .reset_index(name="count")
+        )
+        total_per_group = hourly_hems_result_counts.groupby("hour")["count"].transform(
+            "sum"
+        )
+        hourly_hems_result_counts["proportion"] = (
+            hourly_hems_result_counts["count"] / total_per_group
+        )
+
+        return px.bar(
+            hourly_hems_result_counts,
+            x="hour",
+            y=y_col,
+            color="hems_result",
+        )
