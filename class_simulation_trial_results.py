@@ -100,7 +100,10 @@ from scipy.stats import ks_2samp
 
 import streamlit as st
 
+from _processing_functions import graceful_methods
 
+
+@graceful_methods
 class TrialResults:
     """
     Manages results from a model trial
@@ -220,8 +223,6 @@ class TrialResults:
         self.prep_util_df_from_call_df()
 
     def enhance_run_results(self):
-        # self.run_results = _processing_functions.make_callsign_column(self.run_results)
-
         self.run_results["timestamp_dt"] = pd.to_datetime(
             self.run_results["timestamp_dt"], format="ISO8601"
         )
@@ -250,7 +251,7 @@ class TrialResults:
             .rename(columns={"time_type": "Count"})
             .reset_index()
             .rename(columns={"time_type": "Resource Allocation Attempt Outcome"})
-        )
+        ).copy()
 
     def get_daily_availability_df(self):
         self.daily_availability_df = (
@@ -585,6 +586,10 @@ class TrialResults:
         # backfill this per patient/run so we'll have access to it from the row for
         # the patient's arrival
         run_results_bfilled = self.run_results.copy()
+        print("==run results bfilled==")
+        print(run_results_bfilled.head())
+        print(run_results_bfilled.columns)
+
         if "P_ID" not in run_results_bfilled.columns:
             run_results_bfilled = run_results_bfilled.reset_index()
 
@@ -2284,7 +2289,7 @@ class TrialResults:
                     "run_number": "Run",
                 }
             )
-        )
+        ).copy()
 
     def get_perc_unattended_string(self):
         """
@@ -4420,7 +4425,7 @@ reflect the patterns of demand observed historically.
     def PLOT_events_over_time(self, runs=None):
         events_over_time_df = self.run_results[
             self.run_results["run_number"].isin(runs)
-        ]
+        ].copy()
 
         # Fix to deal with odd community cloud indexing bug
         if "P_ID" not in events_over_time_df.columns:
@@ -4498,10 +4503,12 @@ reflect the patterns of demand observed historically.
             .groupby(["hems_result", "hour"])
             .size()
             .reset_index(name="count")
-        )
+        ).copy()
+
         total_per_group = hourly_hems_result_counts.groupby("hour")["count"].transform(
             "sum"
         )
+
         hourly_hems_result_counts["proportion"] = (
             hourly_hems_result_counts["count"] / total_per_group
         )

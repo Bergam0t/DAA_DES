@@ -2,8 +2,10 @@ import pandas as pd
 import plotly.express as px
 from plotly.graph_objects import Figure
 import _processing_functions
+from _processing_functions import graceful_methods
 
 
+@graceful_methods
 class HistoricResults:
     """
     Manages historic results

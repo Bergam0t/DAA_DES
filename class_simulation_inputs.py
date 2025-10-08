@@ -1,6 +1,8 @@
 import pandas as pd
+from _processing_functions import graceful_methods
 
 
+@graceful_methods
 class SimulationInputs:
     def __init__(
         self,

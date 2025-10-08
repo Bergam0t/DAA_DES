@@ -6,13 +6,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# Plotting
-import plotly.express as px
-import plotly.graph_objects as go
-
+# Memory management
 import gc
-
-from scipy.stats import ks_2samp
 
 import _app_utils
 from _app_utils import (
@@ -22,6 +17,8 @@ from _app_utils import (
     get_text_sheet,
     format_sigfigs,
     format_diff,
+    summary_sidebar,
+    generate_quarto_report,
 )
 
 # Workaround to deal with relative import issues
@@ -92,7 +89,7 @@ with st.sidebar:
         help="This will turn on display of messages in the developer terminal and write logging messages to the log.txt file",
     )
 
-    _app_utils.summary_sidebar(quarto_string=quarto_string)
+    summary_sidebar(quarto_string=quarto_string)
 
 with stylable_container(
     key="run_buttons",
@@ -1147,24 +1144,20 @@ the overall time period.*
             with tab_4_2:
                 st.subheader("Event Overview")
 
-                @st.fragment
-                def event_overview_plot():
-                    runs_to_display_eo = st.multiselect(
-                        "Choose the runs to display",
-                        trial_results.run_results["run_number"].unique(),
-                        default=1,
-                    )
+                # @st.fragment
+                # def event_overview_plot():
+                #     runs_to_display_eo = st.multiselect(
+                #         "Choose the runs to display",
+                #         trial_results.run_results["run_number"].unique(),
+                #         default=1,
+                #     )
 
-                    st.plotly_chart(
-                        trial_results.PLOT_events_over_time(runs=runs_to_display_eo),
-                        use_container_width=True,
-                    )
+                #     st.plotly_chart(
+                #         trial_results.PLOT_events_over_time(runs=runs_to_display_eo),
+                #         use_container_width=True,
+                #     )
 
-                event_overview_plot()
-
-                #                 # Fix to deal with odd community cloud indexing bug
-                #                 if "P_ID" not in results_all_runs.columns:
-                #                     results_all_runs = results_all_runs.reset_index()
+                # event_overview_plot()
 
                 st.plotly_chart(
                     trial_results.PLOT_cumulative_arrivals_per_run(),
@@ -1463,9 +1456,7 @@ the overall time period.*
                             ) as text_file:
                                 text_file.write(quarto_string)
 
-                            msg = _app_utils.generate_quarto_report(
-                                run_quarto_check=False
-                            )
+                            msg = generate_quarto_report(run_quarto_check=False)
 
                             if msg == "success":
                                 st.success("Report Available for Download")

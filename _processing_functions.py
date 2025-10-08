@@ -2,6 +2,42 @@ import pandas as pd
 import re
 
 
+def graceful_methods(cls):
+    """Wrap all methods in a class with context-aware error handling:
+    - If running in Streamlit, shows st.error("Failed to generate graph.")
+    - Otherwise, logs the error to console.
+    """
+    for name, method in cls.__dict__.items():
+        if callable(method) and not name.startswith("__"):
+
+            def make_wrapper(fn):
+                def wrapper(self, *args, **kwargs):
+                    try:
+                        return fn(self, *args, **kwargs)
+                    except Exception as e:
+                        # Detect Streamlit
+                        try:
+                            import streamlit.runtime
+
+                            in_streamlit = streamlit.runtime.exists()
+                        except Exception:
+                            in_streamlit = False
+
+                        if in_streamlit:
+                            import streamlit as st
+
+                            st.error("⚠️ Failed to generate graph.")
+                            st.caption(f"Error in `{fn.__name__}`: {e}")
+                        else:
+                            print(f"⚠️ Failed to run {fn.__name__}: {e}")
+                        return None
+
+                return wrapper
+
+            setattr(cls, name, make_wrapper(method))
+    return cls
+
+
 # def make_callsign_column(dataframe):
 #     dataframe["callsign"] = dataframe["vehicle_type"].str[0].str.upper() + dataframe[
 #         "callsign_group"
