@@ -51,8 +51,8 @@ with open(f"{APP_DIR}/style.css") as css:
 
 setup_state()
 
-st.write("Current working directory:", os.getcwd())
-st.write("Contents:", os.listdir())
+# st.write("Current working directory:", os.getcwd())
+# st.write("Contents:", os.listdir())
 
 # Pull in required font
 poppins_script = """
