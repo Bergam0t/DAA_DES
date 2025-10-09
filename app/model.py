@@ -184,7 +184,9 @@ if button_run_pressed:
                 )
 
             # Turn into a single dataframe when all runs complete
-            pd.concat(results).to_csv(Utils.RUN_RESULTS_CSV, index=False)
+            pd.concat(results).to_csv(
+                Utils.RUN_RESULTS_CSV, index=True, encoding="utf-8-sig"
+            )
 
             my_bar.empty()
 
