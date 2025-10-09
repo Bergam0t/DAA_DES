@@ -1,5 +1,40 @@
 import pandas as pd
 import re
+import functools
+import traceback
+import streamlit as st
+
+
+def graceful(fn):
+    """Decorator that handles errors gracefully in or out of Streamlit."""
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as e:
+            tb = traceback.format_exc()
+
+            # Detect Streamlit runtime safely
+            in_streamlit = False
+            try:
+                import streamlit.runtime
+
+                in_streamlit = streamlit.runtime.exists()
+            except Exception:
+                pass
+
+            if in_streamlit:
+                import streamlit as st
+
+                st.error(f"⚠️ Failed in `{fn.__name__}`: {e}")
+                st.code(tb)
+            else:
+                print(f"⚠️ Failed in `{fn.__name__}`: {e}")
+                print(tb)
+            return None
+
+    return wrapper
 
 
 def graceful_methods(cls):
@@ -26,8 +61,9 @@ def graceful_methods(cls):
                         if in_streamlit:
                             import streamlit as st
 
-                            st.error("⚠️ Failed to generate graph.")
-                            st.caption(f"Error in `{fn.__name__}`: {e}")
+                            st.error(
+                                f"⚠️ Failed to generate output from `{fn.__name__}`: {e}."
+                            )
                         else:
                             print(f"⚠️ Failed to run {fn.__name__}: {e}")
                         return None

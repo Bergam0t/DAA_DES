@@ -61,8 +61,8 @@ class HistoricResults:
         self.SIM_hist_params_missed_jobs = None
         self.SIM_hist_suboptimal_care_cat_summary = None
         self.SIM_hist_suboptimal_vehicle_type_summary = None
-        self.SIM_historical_params_df = None
         self.SIM_hist_missed_care_cat_breakdown = None
+        self.run_params_used = None
 
         self.historical_monthly_totals_all_calls = None
         self.historical_monthly_totals_by_hour_of_day = None
@@ -73,7 +73,7 @@ class HistoricResults:
         self.get_SIM_hist_missed_care_cat_breakdown_df()
         self.get_SIM_hist_suboptimal_care_cat_summary_df()
         self.get_SIM_hist_suboptimal_vehicle_type_summary_df()
-        self.get_SIM_hist_params()
+        self.get_run_params_used()
 
         self.get_historical_attendance_df()
         self.get_historical_missed_calls_by_hour()
@@ -113,8 +113,8 @@ class HistoricResults:
             self.historical_monthly_totals_by_day_of_week["month"], format="ISO8601"
         )
 
-    def get_SIM_hist_params(self):
-        self.SIM_hist_params = pd.read_csv(
+    def get_run_params_used(self):
+        self.run_params_used = pd.read_csv(
             f"{self.historical_data_path}/calculated/run_params_used.csv"
         )
 
@@ -595,7 +595,7 @@ class HistoricResults:
         ]
 
         run_duration_days = float(
-            _processing_functions.get_param("sim_duration_days", self.SIM_hist_params)
+            _processing_functions.get_param("sim_duration_days", self.run_params_used)
         )
 
         return (
@@ -611,7 +611,7 @@ class HistoricResults:
         ]
 
         run_duration_days = float(
-            _processing_functions.get_param("sim_duration_days", self.SIM_hist_params)
+            _processing_functions.get_param("sim_duration_days", self.run_params_used)
         )
 
         return (

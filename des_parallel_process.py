@@ -205,7 +205,7 @@ def collateRunResults() -> None:
 
     combined_df = pd.concat([pd.read_csv(f) for f in matching_files], ignore_index=True)
 
-    combined_df.to_csv(Utils.RUN_RESULTS_CSV, index=False)
+    combined_df.to_csv(Utils.RUN_RESULTS_CSV, index=True, encoding="utf-8-sig")
 
     for file in matching_files:
         os.remove(file)

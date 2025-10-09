@@ -805,6 +805,8 @@ class DES_HEMS:
         self.results_df.to_csv(
             f"{Utils.RESULTS_FOLDER}/output_run_{self.run_number}.csv",
             header="column_names",
+            index=True,
+            encoding="utf-8-sig",
         )
 
     def run(self) -> None:

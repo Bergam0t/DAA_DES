@@ -236,6 +236,11 @@ class TrialResults:
             self.run_results["month"], categories=self.month_order, ordered=True
         )
 
+        try:
+            self.run_results = self.run_results.drop(columns=["Unnamed: 0"])
+        except KeyError:
+            pass
+
     def resource_allocation_outcomes(self):
         self.resource_allocation_outcomes_df = (
             (
@@ -351,6 +356,7 @@ class TrialResults:
                     ):  # Ensure there is a next day in our df
                         next_date = daily_df.index[date_idx + 1]
                         minutes_on_next_day = end_hour * 60
+
                         daily_df.loc[next_date, callsign] = (
                             daily_df.loc[next_date, callsign] + minutes_on_next_day
                         )
@@ -2704,6 +2710,7 @@ class TrialResults:
                 row = historical_results_obj.historical_utilisation_df_summary.loc[
                     callsign_str
                 ]
+
                 min_val = row["min"] / 100.0  # Convert percentage to 0-1 scale
                 max_val = row["max"] / 100.0
                 mean_val = row["mean"] / 100.0
