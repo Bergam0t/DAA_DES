@@ -245,9 +245,9 @@ if button_run_pressed:
             simulation_inputs = SimulationInputs(
                 data_folder_path="data", actual_data_folder_path="actual_data"
             )
-            print("simulation input object created successfully")
+            # print("simulation input object created successfully")
 
-            st.write(simulation_inputs.params_df)
+            # st.write(simulation_inputs.params_df)
         except FileNotFoundError:
             print("data folder or actual_data folder not found")
 
@@ -258,9 +258,9 @@ if button_run_pressed:
                 historic_callsign_df_path="tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv",
                 historic_servicing_df_path="tests/rotas_historic/HISTORIC_service_dates.csv",
             )
-            print("historical data object created successfully")
+            # print("historical data object created successfully")
 
-            st.write(historical_data.SIM_hist_params_missed_jobs)
+            # st.write(historical_data.SIM_hist_params_missed_jobs)
         except FileNotFoundError:
             print("historical data folder or historic rotas not found")
 
@@ -270,8 +270,8 @@ if button_run_pressed:
                 historical_data=historical_data,
                 run_results=pd.read_csv("data/run_results.csv"),
             )
-            print(pd.read_csv("data/run_results.csv").head())
-            print("trial results object created successfully")
+            # print(pd.read_csv("data/run_results.csv").head())
+            # print("trial results object created successfully")
 
             # st.write(trial_results.run_results)
         except FileNotFoundError:
