@@ -202,7 +202,7 @@ class TrialResults:
         # Create event_counts_df and event_counts_long
         self.get_event_counts()
         # Create theoretical available resource time dataframe
-        self.calculate_available_hours_v2(
+        self.calculate_available_hours(
             summer_start=int(
                 self.simulation_inputs.rota_start_end_months_df[
                     self.simulation_inputs.rota_start_end_months_df["what"]
@@ -270,7 +270,7 @@ class TrialResults:
             )
         )
 
-    def calculate_available_hours_v2(self, summer_start, summer_end):
+    def calculate_available_hours(self, summer_start, summer_end):
         """
         Version of a function to calculate the number of hours a resource is available for use
         across the duration of the simulation, based on the rota used during the period, accounting

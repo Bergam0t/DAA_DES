@@ -1,22 +1,18 @@
 import streamlit as st
 import platform
-import os
 
 # Data processing imports
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Memory management
 import gc
 
-import _app_utils
 from _app_utils import (
     DAA_COLORSCHEME,
     iconMetricContainer,
     get_text,
     get_text_sheet,
-    format_sigfigs,
     format_diff,
     summary_sidebar,
     generate_quarto_report,
@@ -65,12 +61,12 @@ quarto_string = ""
 text_df = get_text_sheet("model")
 
 # Avoid reading from utils due to odd issues it seems to be introducing
-# TODO: Explore why this is happening in more detail
 # u = Utils()
 # rota = u.HEMS_ROTA
 # rota = pd.read_csv("actual_data/HEMS_ROTA.csv")
 # SERVICING_SCHEDULE = pd.read_csv('actual_data/service_schedules_by_model.csv')
 
+# Set up the columns for the 'run simulation' button and DAA logo
 col1, col2 = st.columns([0.7, 0.3])
 
 with col1:
@@ -79,10 +75,8 @@ with col1:
 with col2:
     st.image(f"{APP_DIR}/assets/daa-logo.svg", width=200)
 
+# Add a sidebar with a toggle for debugging messages and a summary of the model input parameters
 with st.sidebar:
-    # generate_downloadable_report = st.toggle("Generate a Downloadable Summary of Results", False,
-    #                                          help="This will generate a downloadable report. This can slow down the running of the model, so turn this off if you don't need it.")
-
     debug_messages = st.toggle(
         "Turn on debugging messages",
         value=st.session_state.debugging_messages_to_log,
@@ -97,6 +91,7 @@ with st.sidebar:
 
     summary_sidebar(quarto_string=quarto_string)
 
+# Create the run button with a custom style
 with stylable_container(
     key="run_buttons",
     css_styles=f"""
@@ -112,6 +107,8 @@ with stylable_container(
         icon=":material/play_circle:",
     )
 
+# If the user hasn't been to the setup page, warn them that they will be using the default
+# parameters, and give them an easy way to navigate to the parameter setup page
 if not st.session_state["visited_setup_page"]:
     if not button_run_pressed:
         with stylable_container(
@@ -136,6 +133,7 @@ if button_run_pressed:
 
     gc.collect()
 
+    # MARK: Run Simulation
     progress_text = "Simulation in progress. Please wait."
     # This check is a way to guess whether it's running on
     # Streamlit community cloud
@@ -230,6 +228,8 @@ if button_run_pressed:
             "Download Output",
         ]
 
+        # Set up the required number of tabs for results, which will vary depending on whether
+        # the user has chosen to create an animation
         if st.session_state.create_animation_input:
             tab_names.append("Animation")
             tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(tab_names)
@@ -239,15 +239,12 @@ if button_run_pressed:
         with tab5:
             report_message = st.empty()
 
-            # report_message.info("Generating Report...")
-
         try:
             simulation_inputs = SimulationInputs(
                 data_folder_path="data", actual_data_folder_path="actual_data"
             )
             # print("simulation input object created successfully")
 
-            # st.write(simulation_inputs.params_df)
         except FileNotFoundError:
             print("data folder or actual_data folder not found")
 
@@ -260,7 +257,6 @@ if button_run_pressed:
             )
             # print("historical data object created successfully")
 
-            # st.write(historical_data.SIM_hist_params_missed_jobs)
         except FileNotFoundError:
             print("historical data folder or historic rotas not found")
 
@@ -270,13 +266,11 @@ if button_run_pressed:
                 historical_data=historical_data,
                 run_results=pd.read_csv("data/run_results.csv"),
             )
-            # print(pd.read_csv("data/run_results.csv").head())
             # print("trial results object created successfully")
-
-            # st.write(trial_results.run_results)
         except FileNotFoundError:
             print("run results not found")
 
+        # MARK: Result Summary
         with tab1:
             quarto_string += "# Key Metrics\n\n"
 
@@ -539,6 +533,7 @@ if button_run_pressed:
 
             t1_col3, t1_col4 = st.columns(2)
 
+        # MARK: Key Plots
         with tab2:
             tab_2_1, tab_2_2, tab_2_3, tab_2_4, tab_2_5 = st.tabs(
                 [
@@ -557,7 +552,9 @@ if button_run_pressed:
                     show_proportions_per_hour = st.toggle(
                         "Show as proportion of jobs missed per hour", value=False
                     )
+
                     by_quarter = st.toggle("Stratify results by quarter", value=False)
+
                     st.plotly_chart(
                         trial_results.PLOT_missed_jobs(
                             show_proportions_per_hour=show_proportions_per_hour,
@@ -787,8 +784,8 @@ dataset.
 
                 job_count_heatmap()
 
+        # MARK: Historical Comparisons
         with tab3:
-            # tab_3_1, tab_3_2, tab_3_3, tab_3_4, tab_3_5 = st.tabs([
             tab_3_1, tab_3_2, tab_3_3, tab_3_4, tab_3_5, tab_3_6 = st.tabs(
                 [
                     "Jobs per Month",
@@ -1085,16 +1082,13 @@ These stages are shown for two types of vehicles:
 - If the boxes and whiskers for simulated and historical data overlap a lot, that means the simulation is doing a good job of copying reality.
                            """)
 
+        # MARK: Debugging Plots
         with tab4:
             st.caption("""
 This tab contains visualisations to help model authors do additional checks into the underlying functioning of the model.
 
 Most users will not need to look at the visualisations in this tab.
             """)
-
-            # tab_4_1, tab_4_2, tab_4_3, tab_4_4, tab_4_5 = st.tabs(["Debug Resources", "Debug Events", "Debug Outcomes",
-            #                                               "Process Analytics", "Process Analytics - Resources"
-            #                                               ])
 
             tab_4_1, tab_4_2, tab_4_3, tab_4_4 = st.tabs(
                 [
@@ -1392,78 +1386,7 @@ the overall time period.*
                         show_group_averages=False,
                     )
                 )
-
-        #             # with tab_4_4:
-        #             #     _process_analytics.create_event_log("data/run_results.csv")
-
-        #             #     print("Current working directory:", os.getcwd())
-
-        #             #     # This check is a way to guess whether it's running on
-        #             #     # Streamlit community cloud
-        #             #     if platform.processor() == '':
-        #             #         try:
-        #             #             process1 = subprocess.Popen(["Rscript", "app/generate_bupar_outputs.R"],
-        #             #                                         stdout=subprocess.PIPE,
-        #             #                                         stderr=subprocess.PIPE,
-        #             #                                         text=True,
-        #             #                                         cwd="app")
-
-        #             #         except:
-        #             #             # Get absolute path to the R script
-        #             #             script_path = Path(__file__).parent / "generate_bupar_outputs.R"
-        #             #             st.write(f"Trying path: {script_path}" )
-
-        #             #             process1 = subprocess.Popen(["Rscript", str(script_path)],
-        #             #                                         stdout=subprocess.PIPE,
-        #             #                                         stderr=subprocess.PIPE,
-        #             #                                         text=True)
-
-        #             #     else:
-        #             #         result = subprocess.run(["Rscript", "app/generate_bupar_outputs.R"],
-        #             #                                 capture_output=True, text=True)
-        #             #     try:
-        #             #         st.subheader("Process - Absolute Frequency")
-        #             #         st.image("visualisation/absolute_frequency.svg")
-        #             #     except:
-        #             #         st.warning("Process maps could not be generated")
-
-        #             #     try:
-        #             #         # st.html("visualisation/anim_process.html")
-        #             #         components.html("visualisation/anim_process.html")
-        #             #     except:
-        #             #         st.warning("Animated Process maps could not be generated")
-
-        #             #     try:
-        #             #         # st.subheader("Process - Absolute Cases")
-        #             #         # st.image("visualisation/absolute_case.svg")
-
-        #             #         st.subheader("Performance - Average (Mean) Transition and Activity Times")
-        #             #         st.image("visualisation/performance_mean.svg")
-
-        #             #         st.subheader("Performance - Maximum Transition and Activity Times")
-        #             #         st.image("visualisation/performance_max.svg")
-
-        #             #         st.subheader("Activity - Processing Time - activity")
-        #             #         st.image("visualisation/processing_time_activity.svg")
-
-        #             #         st.subheader("Activity - Processing Time - Resource/Activity")
-        #             #         st.image("visualisation/processing_time_resource_activity.svg")
-        #             #     except:
-        #             #         st.warning("Process maps could not be generated")
-
-        #             # with tab_4_5:
-        #             #     try:
-        #             #         st.subheader("Activities - by Resource")
-        #             #         st.image("visualisation/relative_resource_level.svg")
-        #             #     except:
-        #             #         st.warning("Animated process maps could not be generated")
-
-        #             #     try:
-        #             #         # st.html("visualisation/anim_resource_level.html")
-        #             #         components.html("visualisation/anim_resource_level.html")
-        #             #     except:
-        #             #         st.warning("Animated process maps could not be generated")
-
+        # MARK: Generate Report
         with tab5:
 
             @st.fragment()
