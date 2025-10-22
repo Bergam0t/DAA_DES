@@ -999,16 +999,16 @@ Partial months are excluded for ease of interpretation.
     """)
 
                     historical_data.historical_time_df_cars_only = (
-                        historical_data.historical_activity_durations_breakdown[
-                            historical_data.historical_activity_durations_breakdown[
+                        historical_data.historical_job_durations_breakdown[
+                            historical_data.historical_job_durations_breakdown[
                                 "vehicle_type"
                             ]
                             == "car"
                         ]
                     )
                     historical_data.historical_time_df_helos_only = (
-                        historical_data.historical_activity_durations_breakdown[
-                            historical_data.historical_activity_durations_breakdown[
+                        historical_data.historical_job_durations_breakdown[
+                            historical_data.historical_job_durations_breakdown[
                                 "vehicle_type"
                             ]
                             == "helicopter"

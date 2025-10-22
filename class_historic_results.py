@@ -21,79 +21,98 @@ class HistoricResults:
         self.historical_data_path = historical_data_folder_path
 
         # Attendance dataframes
-        self.historical_attendance_df = None
+        self.historical_missed_calls_by_month = None
+        self.get_historical_missed_calls_by_month_df()
 
         # Missed calls
         self.historical_missed_calls_by_hour_df = None
+        self.get_historical_missed_calls_by_hour()
+
         self.historical_missed_calls_by_quarter_and_hour_df = None
+        self.get_historical_missed_calls_by_quarter_and_hour()
 
         # Jobs per month
         self.historical_jobs_per_month = None
+        self.get_historical_jobs_per_month()
+
         self.historical_monthly_totals_by_callsign = None
+        self.get_historical_monthly_totals_by_callsign()
+
+        self.historical_monthly_totals_all_calls = None
+        self.get_historical_monthly_totals_all_calls()
+
+        self.historical_monthly_totals_by_hour_of_day = None
+        self.get_historical_monthly_totals_by_hour_of_day()
+
+        self.historical_monthly_totals_by_day_of_week = None
+        self.get_historical_monthly_totals_by_day_of_week()
 
         # Jobs per day
         self.historical_jobs_per_day_per_callsign = None
+        self.get_historical_jobs_per_day_per_callsign()
+
+        self.historical_daily_calls_breakdown = None
+        self.get_historical_daily_calls_breakdown()
 
         # Care categories
+        self.historical_care_cat_counts = None
+        self.get_historical_care_cat_counts()
+
         self.care_cat_by_hour_historic = None
+        self.get_care_cat_by_hour_historic()
 
         # Activity durations
-        self.historical_activity_durations_summary = None
-        self.historical_activity_durations_breakdown = None
+        self.historical_median_time_of_activities_by_month_and_resource_type = None
+        self.get_historical_median_time_of_activities_by_month_and_resource_type()
+        self.historical_job_durations_breakdown = None
+        self.get_historical_job_durations_breakdown()
 
         # Utilisation (recorded)
         self.historical_monthly_resource_utilisation = None
+        self.get_historical_monthly_resource_utilisation()
+
+        ########################################
+        # 'Calculated' historical data         #
+        ########################################
+        # There is various data that we don't have - for example, we don't
+        # know how many patients who would have benefitted from enhanced care
+        # failed to receive it, by the very nature of those jobs
+        # Therefore we simulate it to the best of our ability during the fitting
+        # process using historical rotas and the model, effectively running a
+        # 'base case'/'current situation' that we can use for comparisons against
+        # different scenarios
+
+        self.run_params_used = None
+        self.get_run_params_used()
+
+        # Historic rotas and scheduling details
+        self.historic_rota_df = pd.read_csv(historic_rota_df_path)
+        self.historic_callsign_df = pd.read_csv(historic_callsign_df_path)
+        self.historic_servicing_df = pd.read_csv(historic_servicing_df_path)
+
+        # Calculated/simulated historical comparisons
+        self.SIM_hist_params_missed_jobs_care_cat_summary = None
+        self.get_SIM_hist_params_missed_jobs_care_cat_summary_df()
+
+        # Suboptimal allocations (by care cat or vehicle type)
+        self.SIM_hist_suboptimal_care_cat_sent_summary = None
+        self.get_SIM_hist_suboptimal_care_cat_sent_summary_df()
+
+        self.SIM_hist_suboptimal_vehicle_type_sent_summary = None
+        self.get_SIM_hist_suboptimal_vehicle_type_sent_summary_df()
+
+        # Missed calls (by care cat or vehicle type)
+        self.SIM_hist_missed_jobs_care_cat_breakdown = None
+        self.get_SIM_hist_missed_jobs_care_cat_breakdown_df()
 
         # Utilisation (calculated)
         self.historical_utilisation_df_complete = None
         self.historical_utilisation_df_summary = None
-
-        # Historic rotas and scheduling details
-        self.historic_rota_df_path = historic_rota_df_path
-        self.historic_callsign_df_path = historic_callsign_df_path
-        self.historic_servicing_df_path = historic_servicing_df_path
-
-        self.historic_rota_df = pd.read_csv(self.historic_rota_df_path)
-        self.historic_callsign_df = pd.read_csv(self.historic_callsign_df_path)
-        self.historic_servicing_df = pd.read_csv(self.historic_servicing_df_path)
-
-        # Calculated/simulated historical comparisons
-        self.SIM_hist_params_missed_jobs = None
-        self.SIM_hist_suboptimal_care_cat_summary = None
-        self.SIM_hist_suboptimal_vehicle_type_summary = None
-        self.SIM_hist_missed_care_cat_breakdown = None
-        self.run_params_used = None
-
-        self.historical_monthly_totals_all_calls = None
-        self.historical_monthly_totals_by_hour_of_day = None
-        self.historical_monthly_totals_by_day_of_week = None
-        self.historical_daily_calls_breakdown = None
-
-        self.get_SIM_hist_params_missed_jobs_df()
-        self.get_SIM_hist_missed_care_cat_breakdown_df()
-        self.get_SIM_hist_suboptimal_care_cat_summary_df()
-        self.get_SIM_hist_suboptimal_vehicle_type_summary_df()
-        self.get_run_params_used()
-
-        self.get_historical_attendance_df()
-        self.get_historical_missed_calls_by_hour()
-        self.get_historical_monthly_resource_utilisation()
-        self.get_historical_missed_calls_by_quarter_and_hour()
-        self.get_care_cat_by_hour_historic()
-        self.get_historical_jobs_per_day_per_callsign()
-        self.get_historical_jobs_per_month()
-        self.get_historical_activity_durations_summary()
-        self.get_historical_monthly_totals_by_callsign()
-        self.get_historical_monthly_totals_by_hour_of_day()
-        self.get_historical_activity_durations_breakdown()
-
-        self.get_historical_monthly_totals_all_calls()
-        self.get_historical_monthly_totals_by_day_of_week()
-
         self.make_RWC_utilisation_dataframe()
 
-        self.get_historical_daily_calls_breakdown()
-
+    ###################################################
+    # MARK: Methods for data import from csvs         #
+    ###################################################
     def get_historical_monthly_totals_by_hour_of_day(self):
         self.historical_monthly_totals_by_hour_of_day = pd.read_csv(
             f"{self.historical_data_path}/historical_monthly_totals_by_hour_of_day.csv"
@@ -135,36 +154,38 @@ class HistoricResults:
             self.historical_monthly_totals_all_calls["month"].apply(lambda x: x.year)
         )
 
-    def get_SIM_hist_params_missed_jobs_df(self):
-        self.SIM_hist_params_missed_jobs = pd.read_csv(
+    def get_SIM_hist_params_missed_jobs_care_cat_summary_df(self):
+        self.SIM_hist_params_missed_jobs_care_cat_summary = pd.read_csv(
             f"{self.historical_data_path}/calculated/SIM_hist_params_missed_jobs_care_cat_summary.csv"
         )
 
-    def get_SIM_hist_missed_care_cat_breakdown_df(self):
-        self.SIM_hist_missed_care_cat_breakdown = pd.read_csv(
+    def get_SIM_hist_missed_jobs_care_cat_breakdown_df(self):
+        self.SIM_hist_missed_jobs_care_cat_breakdown = pd.read_csv(
             f"{self.historical_data_path}/calculated/SIM_hist_params_missed_jobs_care_cat_breakdown.csv"
         )
 
-    def get_SIM_hist_suboptimal_care_cat_summary_df(self):
-        self.SIM_hist_suboptimal_care_cat_summary = pd.read_csv(
+    def get_SIM_hist_suboptimal_care_cat_sent_summary_df(self):
+        self.SIM_hist_suboptimal_care_cat_sent_summary = pd.read_csv(
             f"{self.historical_data_path}/calculated/SIM_hist_params_suboptimal_care_cat_sent_summary.csv"
         )
 
-    def get_SIM_hist_suboptimal_vehicle_type_summary_df(self):
-        self.SIM_hist_suboptimal_vehicle_type_summary = pd.read_csv(
+    def get_SIM_hist_suboptimal_vehicle_type_sent_summary_df(self):
+        self.SIM_hist_suboptimal_vehicle_type_sent_summary = pd.read_csv(
             f"{self.historical_data_path}/calculated/SIM_hist_params_suboptimal_vehicle_type_sent_summary.csv"
         )
 
-    def get_historical_attendance_df(self):
-        self.historical_attendance_df = pd.read_csv(
+    def get_historical_missed_calls_by_month_df(self):
+        self.historical_missed_calls_by_month = pd.read_csv(
             f"{self.historical_data_path}/historical_missed_calls_by_month.csv"
         )
 
-        self.historical_attendance_df = self.historical_attendance_df.pivot(
-            columns="callsign_group_simplified", index="month_start", values="count"
-        ).reset_index()
+        self.historical_missed_calls_by_month = (
+            self.historical_missed_calls_by_month.pivot(
+                columns="callsign_group_simplified", index="month_start", values="count"
+            ).reset_index()
+        )
 
-        self.historical_attendance_df.rename(
+        self.historical_missed_calls_by_month.rename(
             columns={
                 "HEMS (helo or car) available and sent": "jobs_attended",
                 "No HEMS available": "jobs_not_attended",
@@ -172,14 +193,14 @@ class HistoricResults:
             inplace=True,
         )
 
-        self.historical_attendance_df["all_received_calls"] = (
-            self.historical_attendance_df["jobs_attended"]
-            + self.historical_attendance_df["jobs_not_attended"]
+        self.historical_missed_calls_by_month["all_received_calls"] = (
+            self.historical_missed_calls_by_month["jobs_attended"]
+            + self.historical_missed_calls_by_month["jobs_not_attended"]
         )
 
-        self.historical_attendance_df["perc_unattended_historical"] = (
-            self.historical_attendance_df["jobs_not_attended"]
-            / self.historical_attendance_df["all_received_calls"].round(2)
+        self.historical_missed_calls_by_month["perc_unattended_historical"] = (
+            self.historical_missed_calls_by_month["jobs_not_attended"]
+            / self.historical_missed_calls_by_month["all_received_calls"].round(2)
         )
 
     def get_historical_missed_calls_by_hour(self):
@@ -199,10 +220,13 @@ class HistoricResults:
             f"{self.historical_data_path}/historical_missed_calls_by_quarter_and_hour.csv"
         )
 
-    def get_care_cat_by_hour_historic(self):
-        self.care_cat_by_hour_historic = pd.read_csv(
+    def get_historical_care_cat_counts(self):
+        self.historical_care_cat_counts = pd.read_csv(
             f"{self.historical_data_path}/historical_care_cat_counts.csv"
         )
+
+    def get_care_cat_by_hour_historic(self):
+        self.care_cat_by_hour_historic = self.historical_care_cat_counts.copy()
 
         total_per_hour = self.care_cat_by_hour_historic.groupby("hour")[
             "count"
@@ -232,21 +256,30 @@ class HistoricResults:
             f"{self.historical_data_path}/historical_monthly_totals_by_callsign.csv"
         )
 
-    def get_historical_activity_durations_summary(self):
-        self.historical_activity_durations_summary = pd.read_csv(
+    def get_historical_median_time_of_activities_by_month_and_resource_type(self):
+        self.historical_median_time_of_activities_by_month_and_resource_type = pd.read_csv(
             f"{self.historical_data_path}/historical_median_time_of_activities_by_month_and_resource_type.csv",
             parse_dates=False,
         )
 
         # Parse month manually as more controllable
-        self.historical_activity_durations_summary["month"] = pd.to_datetime(
-            self.historical_activity_durations_summary["month"], format="%Y-%m-%d"
+        self.historical_median_time_of_activities_by_month_and_resource_type[
+            "month"
+        ] = pd.to_datetime(
+            self.historical_median_time_of_activities_by_month_and_resource_type[
+                "month"
+            ],
+            format="%Y-%m-%d",
         )
 
-    def get_historical_activity_durations_breakdown(self):
-        self.historical_activity_durations_breakdown = pd.read_csv(
+    def get_historical_job_durations_breakdown(self):
+        self.historical_job_durations_breakdown = pd.read_csv(
             f"{self.historical_data_path}/historical_job_durations_breakdown.csv"
         )
+
+    ##################################################################
+    # MARK: Methods for creating new dataframes from imported data   #
+    ##################################################################
 
     def make_RWC_utilisation_dataframe(
         self,
@@ -446,18 +479,13 @@ class HistoricResults:
             "historical_data/calculated/complete_utilisation_historical_summary.csv"
         )
 
+    ############################
+    # MARK: Plotting methods   #
+    ############################
     def PLOT_historical_missed_jobs_data(self, format="stacked_bar") -> Figure:
-        if self.historical_attendance_df is None:
-            try:
-                self.get_historical_attendance_df()
-            except FileNotFoundError:
-                raise (
-                    "Historical attendance df not found. Please run the method get_historical_attendance_df(),"
-                    "passiing in the path to the historical data on missed calls per month"
-                )
         if format == "stacked_bar":
             return px.bar(
-                self.historical_attendance_df[
+                self.historical_missed_calls_by_month[
                     ["month", "jobs_not_attended", "jobs_attended"]
                 ].melt(id_vars="month"),
                 x="month",
@@ -467,21 +495,23 @@ class HistoricResults:
 
         elif format == "line_not_attended_count":
             return px.line(
-                self.historical_attendance_df, x="month", y="jobs_not_attended"
+                self.historical_missed_calls_by_month, x="month", y="jobs_not_attended"
             )
 
         elif format == "line_not_attended_perc":
             return px.line(
-                self.historical_attendance_df, x="month", y="perc_unattended_historical"
+                self.historical_missed_calls_by_month,
+                x="month",
+                y="perc_unattended_historical",
             )
 
         elif format == "string":
             # This approach can distort the result by giving more weight to months with higher numbers of calls
             # However, for system-level performance, which is what we care about here, it's a reasonable option
-            all_received_calls_period = self.historical_attendance_df[
+            all_received_calls_period = self.historical_missed_calls_by_month[
                 "all_received_calls"
             ].sum()
-            all_attended_jobs_period = self.historical_attendance_df[
+            all_attended_jobs_period = self.historical_missed_calls_by_month[
                 "jobs_attended"
             ].sum()
             return (
@@ -494,7 +524,7 @@ class HistoricResults:
 
         else:
             # Melt the DataFrame to long format
-            df_melted = self.historical_attendance_df[
+            df_melted = self.historical_missed_calls_by_month[
                 ["month", "jobs_not_attended", "jobs_attended"]
             ].melt(id_vars="month")
 
@@ -568,10 +598,19 @@ class HistoricResults:
 
         return fig
 
+    ##################################################################
+    # MARK: Methods that return a figure/string for display          #
+    ##################################################################
     def RETURN_missed_jobs_fig(self, care_category, what="average") -> str:
-        row = self.SIM_hist_params_missed_jobs[
-            (self.SIM_hist_params_missed_jobs["care_cat"] == care_category)
-            & (self.SIM_hist_params_missed_jobs["time_type"] == "No Resource Available")
+        row = self.SIM_hist_params_missed_jobs_care_cat_summary[
+            (
+                self.SIM_hist_params_missed_jobs_care_cat_summary["care_cat"]
+                == care_category
+            )
+            & (
+                self.SIM_hist_params_missed_jobs_care_cat_summary["time_type"]
+                == "No Resource Available"
+            )
         ]
         if what == "average":
             return row["jobs_per_year_average"].values[0]
@@ -589,9 +628,12 @@ class HistoricResults:
             return f"Error returning value for callsign {callsign}. Available callsigns are {self.historical_utilisation_df_summary.index.unique()}"
 
     def RETURN_prediction_cc_patients_sent_ec_resource(self) -> tuple:
-        row_of_interest = self.SIM_hist_suboptimal_care_cat_summary[
-            (self.SIM_hist_suboptimal_care_cat_summary["hems_res_category"] != "CC")
-            & (self.SIM_hist_suboptimal_care_cat_summary["care_cat"] == "CC")
+        row_of_interest = self.SIM_hist_suboptimal_care_cat_sent_summary[
+            (
+                self.SIM_hist_suboptimal_care_cat_sent_summary["hems_res_category"]
+                != "CC"
+            )
+            & (self.SIM_hist_suboptimal_care_cat_sent_summary["care_cat"] == "CC")
         ]
 
         run_duration_days = float(
@@ -605,9 +647,15 @@ class HistoricResults:
         )
 
     def RETURN_prediction_heli_benefit_patients_sent_car(self) -> tuple:
-        row_of_interest = self.SIM_hist_suboptimal_vehicle_type_summary[
-            (self.SIM_hist_suboptimal_vehicle_type_summary["vehicle_type"] == "car")
-            & (self.SIM_hist_suboptimal_vehicle_type_summary["heli_benefit"] == "y")
+        row_of_interest = self.SIM_hist_suboptimal_vehicle_type_sent_summary[
+            (
+                self.SIM_hist_suboptimal_vehicle_type_sent_summary["vehicle_type"]
+                == "car"
+            )
+            & (
+                self.SIM_hist_suboptimal_vehicle_type_sent_summary["heli_benefit"]
+                == "y"
+            )
         ]
 
         run_duration_days = float(

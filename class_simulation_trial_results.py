@@ -3728,10 +3728,10 @@ class TrialResults:
     ):
         fig = go.Figure()
 
-        print(self.historical_data.historical_activity_durations_breakdown)
+        print(self.historical_data.historical_job_durations_breakdown)
         historical_activity_times_overall = (
-            self.historical_data.historical_activity_durations_breakdown[
-                self.historical_data.historical_activity_durations_breakdown["name"]
+            self.historical_data.historical_job_durations_breakdown[
+                self.historical_data.historical_job_durations_breakdown["name"]
                 == "total_duration"
             ]
         )
@@ -3997,9 +3997,7 @@ is sufficiently similar to what has been observed historically.
         ].copy()
         run_results["time_type"] = run_results["time_type"].astype("float")
 
-        self.historical_data.historical_activity_durations_breakdown["what"] = (
-            "Historical"
-        )
+        self.historical_data.historical_job_durations_breakdown["what"] = "Historical"
         run_results["what"] = "Simulated"
 
         full_job_duration_breakdown_df = pd.concat(
@@ -4007,8 +4005,8 @@ is sufficiently similar to what has been observed historically.
                 run_results.rename(
                     columns={"time_type": "value", "event_type": "name"}
                 ).drop(columns=["P_ID", "run_number"]),
-                self.historical_data.historical_activity_durations_breakdown[
-                    self.historical_data.historical_activity_durations_breakdown["name"]
+                self.historical_data.historical_job_durations_breakdown[
+                    self.historical_data.historical_job_durations_breakdown["name"]
                     != "total_duration"
                 ].drop(columns=["callsign", "job_identifier"]),
             ]
@@ -4147,14 +4145,14 @@ is sufficiently similar to what has been observed historically.
     ):
         self.missed_jobs_per_run_breakdown["what"] = "Simulation"
 
-        historical_results_obj.SIM_hist_missed_care_cat_breakdown["what"] = (
+        historical_results_obj.SIM_hist_missed_jobs_care_cat_breakdown["what"] = (
             "Historical (Simulated with Historical Rotas)"
         )
 
         full_df = pd.concat(
             [
                 self.missed_jobs_per_run_breakdown,
-                historical_results_obj.SIM_hist_missed_care_cat_breakdown,
+                historical_results_obj.SIM_hist_missed_jobs_care_cat_breakdown,
             ]
         )
 
