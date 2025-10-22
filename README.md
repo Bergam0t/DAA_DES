@@ -1,14 +1,7 @@
 # Devon Air Ambulance Discrete Event Simulation
 
-## Issue Tracking and Roadmap
+This repository contains all model and web app code for the Devon Air Ambulance Simulation modelling project.
 
-Project issues are tracked using the Github issues system and can be accessed [here](https://github.com/RichardPilbery/DAA_DES/issues).
-
-Project milestones can be found [here](https://github.com/RichardPilbery/DAA_DES/milestones?direction=desc&sort=title&state=open).
-
-These project milestones currently supersede information contained in the `roadmap.md` file.
-
-Tickets actively being worked on by contributors can be found on the [project board](https://github.com/users/RichardPilbery/projects/1).
 
 ## DES model logic
 
@@ -22,6 +15,16 @@ The model creates patient episodes and associated outcomes based on the followin
 A full breakdown of the model logic can be found in **reference/daa_des_model_logic**
 
 ![](reference/daa_des_model_logic.png)
+
+## Issue Tracking and Roadmap
+
+Project issues are tracked using the Github issues system and can be accessed [here](https://github.com/RichardPilbery/DAA_DES/issues).
+
+Project milestones can be found [here](https://github.com/RichardPilbery/DAA_DES/milestones?direction=desc&sort=title&state=open).
+
+These project milestones currently supersede information contained in the `roadmap.md` file.
+
+Tickets actively being worked on by contributors can be found on the [project board](https://github.com/users/RichardPilbery/projects/1).
 
 ## Repository Structure
 
@@ -132,7 +135,7 @@ To generate a code coverage report, run `pytest --cov=. --cov-report=html`.
 
 The function and class documentation can be accessed at the following link: [https://richardpilbery.github.io/DAA_DES/](https://richardpilbery.github.io/DAA_DES/)
 
-This documentation is automatically generated using [Sphinx](https://www.sphinx-doc.org/en/master/) and will be regenerated when the code is updated on the main branch on Github.
+This documentation is automatically generated using [pdoc](https://pdoc.dev/) and will be regenerated when the code is updated on the main branch on Github.
 
 
 ## Data output items
@@ -178,6 +181,13 @@ The core environment is provided in the `requirements.txt` file in the root fold
 
 This has been used in conjunction with Python 3.11.9.
 
+A devcontainer.json file has also been provided in the .devcontainer folder; this allows VSCode to access or create a container with the appropriate versions of Python and all requirements.
+
+Alternatively, you could open up the development environment in Github Codespaces, which will achieve the same purpose without you having to clone the repository and set up an environment on your local machine. To access this, ensure you are logged into GitHub, then look for the green 'Code' button at the top of this repository. Click on this and select 'Create codespace on main'.
+
+![](assets/2025-10-22-16-12-57.png)
+
+You can find out more about codespaces at [github.com/features/codespaces](https://github.com/features/codespaces).
 
 ## Web App
 
@@ -187,25 +197,7 @@ Assuming you have installed the environment as above, the web app can be run usi
 
 When running locally, the app will attempt to use multiple cores of the user's computer to undertake several runs of the model simultaneously.
 
-### R
-
-Several additional debugging files are generated using R and the bupaverse packages.
-
-You will need R installed on your machine, with your R exe path added to your machine's PATH environment variable.
-
-You will also need to install the following R packages:
-
-```
-install.packages("readr")
-install.packages("bupaverse")
-install.packages("processanimateR")
-install.packages("processmapR")
-install.packages("DiagrammeR")
-install.packages("ggplot2")
-install.packages("htmlwidgets")
-```
-
-An warning message will be displayed in the app if these additional process maps cannot be generated due to your R configuration.
+The web app can also be accessed without needing to install anything at [daa-des-demo.streamlit.app/](https://daa-des-demo.streamlit.app/). However, not that this will run more slowly and will complete fewer runs by default due to limitations of the hosting platform; it is recommended to download the app and run it locally if you are not just looking to get an idea of the app's capabilities.
 
 ### Quarto
 
@@ -216,6 +208,7 @@ Quarto can be downloaded at [https://quarto.org/docs/get-started/](https://quart
 - It is recommended that, when asked by the installer, you add Quarto to your PATH variable.
 - It is important to note that while a [Python package for quarto exists](https://pypi.org/project/quarto/), this is not the full Quarto command line utility, which will need to be installed separately.
 
+Note that if you are using the .devcontainer, Quarto will be available within the container without undertaking any additional steps.
 
 ### Hosted version of web app
 
@@ -240,7 +233,7 @@ As of March 2025, the app has been tested on a pc with the following specs
 
 When executing the model through the streamlit interface, running locally so parallel processing can be used, the following run times were observed.
 
-**2 years simulated time, default demand, default parameters (2 helicopters, 1 additional car)**
+**2 years simulated time, default demand, default parameters (2 helicopters, 2 backup cars, 1 additional car)**
 
 *including generation of all plots via web interface*
 
