@@ -24,7 +24,7 @@ from utils import Utils
 from _app_utils import (
     get_text,
     get_text_sheet,
-    DAA_COLORSCHEME,
+    COLORSCHEME,
     MONTH_MAPPING,
     REVERSE_MONTH_MAPPING,
     get_rota_month_strings,
@@ -1087,7 +1087,7 @@ with st.sidebar:
     with stylable_container(
         css_styles=f"""
                     button {{
-                            background-color: {DAA_COLORSCHEME["teal"]};
+                            background-color: {COLORSCHEME["teal"]};
                             color: white;
                             border-color: white;
                         }}

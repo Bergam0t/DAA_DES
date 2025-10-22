@@ -2,13 +2,16 @@ from datetime import datetime, timedelta
 import logging
 import time
 import glob
-import os, sys
+import os
+import sys
 import pandas as pd
-from utils import Utils
-from des_hems import DES_HEMS
 import multiprocessing as mp
 from joblib import Parallel, delayed
 from numpy.random import SeedSequence
+from pathlib import Path
+
+from air_ambulance_des.utils import Utils
+from air_ambulance_des.des_hems import DES_HEMS
 
 
 def write_run_params(model) -> None:
@@ -98,9 +101,6 @@ try:
     __file__
 except NameError:
     __file__ = sys.argv[0]
-
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 
 def runSim(
@@ -317,21 +317,3 @@ def parallelProcessJoblib(
         )
         for run in range(total_runs)
     )
-
-
-if __name__ == "__main__":
-    removeExistingResults()
-    # parallelProcessJoblib(1, (1*365*24*60), (0*60), datetime.strptime("2023-01-01 05:00:00", "%Y-%m-%d %H:%M:%S"), False, False, 1.0, 1.0, True)
-    parallelProcessJoblib(
-        12,
-        (2 * 365 * 24 * 60),
-        (0 * 60),
-        datetime.strptime("2023-01-01 05:00:00", "%Y-%m-%d %H:%M:%S"),
-        False,
-        False,
-        1.0,
-        1.0,
-    )
-
-# Testing ----------
-# python des_parallel_process.py

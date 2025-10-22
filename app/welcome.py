@@ -5,7 +5,7 @@ st.set_page_config(layout="wide")
 with open("app/style.css") as css:
     st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
-from _app_utils import get_text, get_text_sheet, DAA_COLORSCHEME
+from _app_utils import get_text, get_text_sheet, COLORSCHEME
 from streamlit_extras.stylable_container import stylable_container
 
 text_df = get_text_sheet("welcome")
@@ -26,7 +26,7 @@ with col_nav_1:
     with stylable_container(
         css_styles=f"""
                 button {{
-                        background-color: {DAA_COLORSCHEME["teal"]};
+                        background-color: {COLORSCHEME["teal"]};
                         color: white;
                     }}
                     """,
@@ -43,9 +43,9 @@ with col_nav_2:
     with stylable_container(
         css_styles=f"""
                 button {{
-                        background-color: {DAA_COLORSCHEME["teal"]};
+                        background-color: {COLORSCHEME["teal"]};
                         color: white;
-                        border-color: {DAA_COLORSCHEME["navy"]};
+                        border-color: {COLORSCHEME["navy"]};
                     }}
                     """,
         key="green_buttons",

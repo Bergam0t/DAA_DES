@@ -1,5 +1,5 @@
 import streamlit as st
-from _app_utils import get_text, get_text_sheet, DAA_COLORSCHEME
+from _app_utils import get_text, get_text_sheet, COLORSCHEME
 from streamlit_extras.stylable_container import stylable_container
 
 st.set_page_config(layout="wide")

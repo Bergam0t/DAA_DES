@@ -1,4 +1,3 @@
-from streamlit_extras.stylable_container import stylable_container
 import streamlit as st
 import pandas as pd
 import os
@@ -6,138 +5,12 @@ import subprocess
 import platform
 from datetime import datetime
 import calendar
-
-
-def format_diff(value):
-    if value > 0:
-        return f"**:red[+{value:.0f}]** from historical"
-    elif value < 0:
-        return f"**:green[{value:.0f}]** from historical"
-    else:
-        return "**:gray[no difference]** from historical"
-
-
-# Mapping months to numbers
-MONTH_MAPPING = {
-    "January": 1,
-    "February": 2,
-    "March": 3,
-    "April": 4,
-    "May": 5,
-    "June": 6,
-    "July": 7,
-    "August": 8,
-    "September": 9,
-    "October": 10,
-    "November": 11,
-    "December": 12,
-}
-
-REVERSE_MONTH_MAPPING = {v: k for k, v in MONTH_MAPPING.items()}
-
-
-def get_rota_month_strings(start_month, end_month):
-    # Convert selected months to numbers
-    start_month_num = MONTH_MAPPING[start_month]
-    end_month_num = MONTH_MAPPING[end_month]
-
-    # Summer rota
-    summer_start_date = f"1st {start_month}"
-    summer_end_day = calendar.monthrange(2024, end_month_num)[
-        1
-    ]  # Assume leap year for Feb
-    summer_end_date = f"{summer_end_day}th {end_month}"
-
-    # Winter rota
-    winter_start_num = (end_month_num % 12) + 1  # month after summer end
-    winter_end_num = (
-        (start_month_num - 1) if start_month_num > 1 else 12
-    )  # month before summer start
-
-    winter_start_date = f"1st {REVERSE_MONTH_MAPPING[winter_start_num]}"
-    winter_end_day = calendar.monthrange(2024, winter_end_num)[
-        1
-    ]  # same leap year assumption
-    winter_end_date = f"{winter_end_day}th {REVERSE_MONTH_MAPPING[winter_end_num]}"
-
-    return (
-        start_month_num,
-        end_month_num,
-        summer_start_date,
-        summer_end_date,
-        summer_end_day,
-        winter_start_date,
-        winter_end_date,
-        winter_end_day,
-    )
-
-
-def format_sigfigs(x, sigfigs=4):
-    from math import log10, floor
-
-    try:
-        if x == 0:
-            return "0.0"
-        elif x < 1e-10:
-            return "<1e-10"
-        else:
-            digits = sigfigs - 1 - floor(log10(abs(x)))
-            return f"{x:.{digits}f}"
-    except (ValueError, TypeError):
-        return str(x)
-
-
-def iconMetricContainer(
-    key, icon_unicode, css_style=None, icon_color="grey", family="filled", type="icons"
-):
-    """Function that returns a CSS styled container for adding a Material Icon to a Streamlit st.metric value
-
-    CREDIT for starter version of this code: https://discuss.streamlit.io/t/adding-an-icon-to-a-st-metric-easily/59140?u=sammi1
-
-    Args:
-        key (str): Unique key for the component
-        iconUnicode (str): Code point for a Material Icon, you can find them here https://fonts.google.com/icons. Sample \e8b6
-        css_style(str, optional): Additional CSS to apply
-        icon_color (str, optional): HTML Hex color value for the icon. Defaults to 'grey'.
-        family(str, optional): "filled" or "outline". Only works with type = "icons"
-        type(str, optional): "icons" or "symbols"
-
-    Returns:
-        DeltaGenerator: A container object. Elements can be added to this container using either the 'with'
-        notation or by calling methods directly on the returned object.
-    """
-
-    if (family == "filled") and (type == "icons"):
-        font_family = "Material Icons"
-    elif (family == "outline") and (type == "icons"):
-        font_family = "Material Icons Outlined"
-    # elif (family == "filled") and (type=="symbols"):
-    #     font_family = "Material Symbols"
-    elif type == "symbols":
-        font_family = "Material Symbols Outlined"
-    else:
-        print("ERROR - Check Params for iconMetricContainer")
-        font_family = "Material Icons"
-
-    css_style_icon = f"""
-                    div[data-testid="stMetricValue"]>div::before
-                    {{
-                        font-family: {font_family};
-                        content: "\{icon_unicode}";
-                        vertical-align: -20%;
-                        color: {icon_color};
-                    }}
-                    """
-
-    if css_style is not None:
-        css_style_icon += """
-
-        """
-
-        css_style_icon += css_style
-
-    iconMetric = stylable_container(key=key, css_styles=css_style_icon)
-    return iconMetric
+from air_ambulance_des.utils import (
+    COLORSCHEME,
+    to_military_time,
+    get_rota_month_strings,
+)
+from streamlit_extras.stylable_container import stylable_container
 
 
 def file_download_confirm():
@@ -152,57 +25,6 @@ def get_text_sheet(sheet):
 @st.cache_data
 def get_text(reference, text_df):
     return text_df[text_df["reference"] == reference]["text"].values[0]
-
-
-DAA_COLORSCHEME = {
-    "red": "#D50032",
-    "navy": "#00205B",
-    "blue": "#1D428A",
-    "teal": "#00B0B9",
-    "lightblue": "#C0F0F2",
-    "green": "#56E39F",
-    "orange": "#FFA400",
-    "yellow": "#F8C630",
-    "darkgreen": "#264027",
-    "verylightblue": "#D5F5F6",
-    "lightgrey": "#CCCCCC",
-    "darkgrey": "#4D4D4D",
-    "charcoal": "#1F1F1F",
-}
-
-
-# 99th Percentile
-def q99(x):
-    return x.quantile(0.99)
-
-
-# 95th Percentile
-def q95(x):
-    return x.quantile(0.95)
-
-
-# 90th Percentile
-def q90(x):
-    return x.quantile(0.9)
-
-
-# 10th Percentile
-def q10(x):
-    return x.quantile(0.1)
-
-
-# 75th Percentile
-def q75(x):
-    return x.quantile(0.75)
-
-
-# 25th Percentile
-def q25(x):
-    return x.quantile(0.25)
-
-
-def to_military_time(hour: int) -> str:
-    return f"{hour:02d}00"
 
 
 @st.cache_data
@@ -265,7 +87,7 @@ def generate_quarto_report(run_quarto_check=False):
     """
     print("Trying to generate a downloadable quarto report")
     output_dir = os.path.join(os.getcwd(), "app/outputs")
-    qmd_filename = "app/air_ambulance_simulation_output.qmd"
+    qmd_filename = "app/air_ambulance_des_output.qmd"
     qmd_path = os.path.join(os.getcwd(), qmd_filename)
     print(f"Trying to find quarto template in {qmd_path}")
     html_filename = os.path.basename(qmd_filename).replace(".qmd", ".html")
@@ -317,7 +139,7 @@ def generate_quarto_report(run_quarto_check=False):
             key="report_dl_buttons",
             css_styles=f"""
                     button {{
-                            background-color: {DAA_COLORSCHEME["green"]};
+                            background-color: {COLORSCHEME["green"]};
                             color: white;
                             border-color: white;
                         }}
@@ -365,7 +187,7 @@ hr {
             key="green_buttons",
             css_styles=f"""
                     button {{
-                            background-color: {DAA_COLORSCHEME["teal"]};
+                            background-color: {COLORSCHEME["teal"]};
                             color: white;
                             border-color: white;
                         }}

@@ -16,10 +16,15 @@ from des_parallel_process import (
     removeExistingResults,
 )
 from datetime import datetime
-import visualisation._job_outcome_calculation as _job_outcome_calculation
 
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+# TODO: Important fix for rerunning with new input data
+# import visualisation._job_outcome_calculation as _job_outcome_calculation
+
+from pathlib import Path
+
+PACKAGE_ROOT = Path(__file__).resolve().parent  # air_ambulance_des/
+REPO_ROOT = PACKAGE_ROOT.parent
+DATA_PATH = REPO_ROOT / "data"
 
 
 class DistributionFitUtils:
@@ -2820,18 +2825,3 @@ class DistributionFitUtils:
 
         except FileNotFoundError:
             pass
-
-
-if __name__ == "__main__":
-    from distribution_fit_utils import DistributionFitUtils
-
-    test = DistributionFitUtils(
-        "external_data/clean_daa_import_missing_2023_2024.csv",
-        calculate_school_holidays=True,
-    )
-    # test = DistributionFitUtils('external_data/clean_daa_import.csv')
-    test.import_and_wrangle()
-    test.run_sim_on_historical_params()
-
-# Testing ----------
-# python distribution_fit_utils.py

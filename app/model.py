@@ -9,7 +9,7 @@ from datetime import datetime
 import gc
 
 from _app_utils import (
-    DAA_COLORSCHEME,
+    COLORSCHEME,
     iconMetricContainer,
     get_text,
     get_text_sheet,
@@ -26,16 +26,20 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 # Simulation imports
-from des_parallel_process import runSim, parallelProcessJoblib, collateRunResults
+from air_ambulance_des.des_parallel_process import (
+    runSim,
+    parallelProcessJoblib,
+    collateRunResults,
+)
 from _state_control import setup_state
 
-from utils import Utils
+from air_ambulance_des.utils import Utils
 
 from streamlit_extras.stylable_container import stylable_container
 
-from class_simulation_trial_results import TrialResults
-from class_simulation_inputs import SimulationInputs
-from class_historic_results import HistoricResults
+from air_ambulance_des.class_simulation_trial_results import TrialResults
+from air_ambulance_des.class_simulation_inputs import SimulationInputs
+from air_ambulance_des.class_historic_results import HistoricResults
 
 APP_DIR = Path(__file__).parent.resolve()
 
@@ -96,7 +100,7 @@ with stylable_container(
     key="run_buttons",
     css_styles=f"""
                     button {{
-                            background-color: {DAA_COLORSCHEME["blue"]};
+                            background-color: {COLORSCHEME["blue"]};
                             color: white;
                             border-color: white;
                         }}
@@ -115,8 +119,8 @@ if not st.session_state["visited_setup_page"]:
             key="warning_buttons",
             css_styles=f"""
                     button {{
-                            background-color: {DAA_COLORSCHEME["orange"]};
-                            color: {DAA_COLORSCHEME["charcoal"]};
+                            background-color: {COLORSCHEME["orange"]};
+                            color: {COLORSCHEME["charcoal"]};
                             border-color: white;
                         }}
                         """,
@@ -243,7 +247,7 @@ if button_run_pressed:
             simulation_inputs = SimulationInputs(
                 data_folder_path="data", actual_data_folder_path="actual_data"
             )
-            # print("simulation input object created successfully")
+            print("simulation input object created successfully")
 
         except FileNotFoundError:
             print("data folder or actual_data folder not found")
@@ -255,7 +259,7 @@ if button_run_pressed:
                 historic_callsign_df_path="tests/rotas_historic/HISTORIC_callsign_registration_lookup.csv",
                 historic_servicing_df_path="tests/rotas_historic/HISTORIC_service_dates.csv",
             )
-            # print("historical data object created successfully")
+            print("historical data object created successfully")
 
         except FileNotFoundError:
             print("historical data folder or historic rotas not found")
@@ -266,7 +270,7 @@ if button_run_pressed:
                 historical_data=historical_data,
                 run_results=pd.read_csv("data/run_results.csv"),
             )
-            # print("trial results object created successfully")
+            print("trial results object created successfully")
         except FileNotFoundError:
             print("run results not found")
 

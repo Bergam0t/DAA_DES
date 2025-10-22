@@ -1,6 +1,6 @@
-from utils import Utils
 import pandas as pd
-from class_ambulance import Ambulance
+from air_ambulance_des.utils import Utils
+from air_ambulance_des.class_ambulance import Ambulance
 
 
 class HEMS(Ambulance):

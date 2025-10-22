@@ -1,8 +1,7 @@
 import pandas as pd
 import plotly.express as px
 from plotly.graph_objects import Figure
-import _processing_functions
-from _processing_functions import graceful_methods
+from air_ambulance_des._processing_functions import graceful_methods, get_param
 
 
 @graceful_methods
@@ -636,9 +635,7 @@ class HistoricResults:
             & (self.SIM_hist_suboptimal_care_cat_sent_summary["care_cat"] == "CC")
         ]
 
-        run_duration_days = float(
-            _processing_functions.get_param("sim_duration_days", self.run_params_used)
-        )
+        run_duration_days = float(get_param("sim_duration_days", self.run_params_used))
 
         return (
             (row_of_interest["mean"].values[0] / run_duration_days) * 365,
@@ -658,9 +655,7 @@ class HistoricResults:
             )
         ]
 
-        run_duration_days = float(
-            _processing_functions.get_param("sim_duration_days", self.run_params_used)
-        )
+        run_duration_days = float(get_param("sim_duration_days", self.run_params_used))
 
         return (
             (row_of_interest["mean"].values[0] / run_duration_days) * 365,

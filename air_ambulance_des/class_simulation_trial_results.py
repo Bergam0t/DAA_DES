@@ -65,7 +65,6 @@ Covers variation within the simulation, and comparison with real world data.
 
 """
 
-import _processing_functions
 import pandas as pd
 import numpy as np
 import re
@@ -89,11 +88,16 @@ from scipy.stats import ks_2samp
 
 import streamlit as st
 
-from _processing_functions import graceful_methods
+from air_ambulance_des._processing_functions import (
+    graceful_methods,
+    get_param,
+    fill_missing_values,
+    calculate_time_difference,
+)
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-from _app_utils import (
-    DAA_COLORSCHEME,
+from air_ambulance_des.utils import (
+    COLORSCHEME,
     q10,
     q90,
     q25,
@@ -281,12 +285,10 @@ class TrialResults:
         Warm up duration is taken into account.
         """
         # Convert data into DataFrames
-        warm_up_end = _processing_functions.get_param(
-            "warm_up_end_date", self.params_df
-        )
+        warm_up_end = get_param("warm_up_end_date", self.params_df)
         warm_up_end = datetime.datetime.strptime(warm_up_end, "%Y-%m-%d %H:%M:%S")
 
-        sim_end = _processing_functions.get_param("sim_end_date", self.params_df)
+        sim_end = get_param("sim_end_date", self.params_df)
         sim_end = datetime.datetime.strptime(sim_end, "%Y-%m-%d %H:%M:%S")
 
         date_range = pd.date_range(
@@ -455,10 +457,10 @@ class TrialResults:
 
         # If utilisation end date is missing then set to end of model
         # as we can assume this is a call that didn't finish before the model did
-        self.resource_use_wide = _processing_functions.fill_missing_values(
+        self.resource_use_wide = fill_missing_values(
             self.resource_use_wide,
             "resource_use_end",
-            _processing_functions.get_param("sim_end_date", self.params_df),
+            get_param("sim_end_date", self.params_df),
         )
 
         # If utilisation start time is missing, then set to start of model + warm-up time (if relevant)
@@ -466,20 +468,18 @@ class TrialResults:
         # after the warm-up period elapsed
         # TODO: need to add in a check to ensure this only happens for calls at the end of the model,
         # not due to errors elsewhere that could fail to assign a resource end time
-        self.resource_use_wide = _processing_functions.fill_missing_values(
+        self.resource_use_wide = fill_missing_values(
             self.resource_use_wide,
             "resource_use",
-            _processing_functions.get_param("warm_up_end_date", self.params_df),
+            get_param("warm_up_end_date", self.params_df),
         )
 
         # Calculate number of minutes the attending resource was in use on each call
-        self.resource_use_wide["resource_use_duration"] = (
-            _processing_functions.calculate_time_difference(
-                self.resource_use_wide,
-                "resource_use",
-                "resource_use_end",
-                unit="minutes",
-            )
+        self.resource_use_wide["resource_use_duration"] = calculate_time_difference(
+            self.resource_use_wide,
+            "resource_use",
+            "resource_use_end",
+            unit="minutes",
         )
 
         # ============================================================ #
@@ -760,14 +760,7 @@ class TrialResults:
             if not average_per_month:
                 jobs_per_hour_historic_long["value"] = jobs_per_hour_historic_long[
                     "value"
-                ] * (
-                    float(
-                        _processing_functions.get_param("sim_duration", self.params_df)
-                    )
-                    / 60
-                    / 24
-                    / 30
-                )
+                ] * (float(get_param("sim_duration", self.params_df)) / 60 / 24 / 30)
 
             jobs_per_hour_historic_agg = (
                 jobs_per_hour_historic_long.groupby(["hour"])["value"].agg(
@@ -815,16 +808,7 @@ class TrialResults:
             if average_per_month:
                 self.hourly_calls_per_run["average_per_day"] = (
                     self.hourly_calls_per_run["count"]
-                    / (
-                        float(
-                            _processing_functions.get_param(
-                                "sim_duration", self.params_df
-                            )
-                        )
-                        / 60
-                        / 24
-                        / 30
-                    )
+                    / (float(get_param("sim_duration", self.params_df)) / 60 / 24 / 30)
                 )
                 y_column = "average_per_day"
                 y_label = "Average Monthly Calls Per Hour Across Simulation<br>Averaged Across Simulation Runs"
@@ -839,7 +823,7 @@ class TrialResults:
                     y=self.hourly_calls_per_run[y_column],
                     name="Simulated Mean",
                     width=0.4,
-                    marker=dict(color=DAA_COLORSCHEME[bar_colour]),
+                    marker=dict(color=COLORSCHEME[bar_colour]),
                     showlegend=True,
                     boxpoints="outliers",  # Show all data points
                 )
@@ -875,21 +859,11 @@ class TrialResults:
 
             if average_per_month:
                 aggregated_data["mean_count"] = aggregated_data["mean_count"] / (
-                    float(
-                        _processing_functions.get_param("sim_duration", self.params_df)
-                    )
-                    / 60
-                    / 24
-                    / 30
+                    float(get_param("sim_duration", self.params_df)) / 60 / 24 / 30
                 )
                 # aggregated_data['std_count'] = aggregated_data['std_count'] / (float(_processing_functions.get_param("sim_duration", params_df))/60/24/ 30)
                 aggregated_data["se_count"] = aggregated_data["se_count"] / (
-                    float(
-                        _processing_functions.get_param("sim_duration", self.params_df)
-                    )
-                    / 60
-                    / 24
-                    / 30
+                    float(get_param("sim_duration", self.params_df)) / 60 / 24 / 30
                 )
 
                 fig.add_trace(
@@ -898,7 +872,7 @@ class TrialResults:
                         y=aggregated_data["mean_count"],
                         name="Simulated Mean",
                         marker=dict(
-                            color=DAA_COLORSCHEME[bar_colour]
+                            color=COLORSCHEME[bar_colour]
                         ),  # Use your color scheme
                         error_y=dict(type="data", array=error_y, visible=True)
                         if error_y is not None
@@ -923,7 +897,7 @@ class TrialResults:
                         y=aggregated_data["mean_count"],
                         name="Simulated Mean",
                         marker=dict(
-                            color=DAA_COLORSCHEME[bar_colour]
+                            color=COLORSCHEME[bar_colour]
                         ),  # Use your color scheme
                         error_y=dict(type="data", array=error_y, visible=True)
                         if error_y is not None
@@ -942,7 +916,7 @@ class TrialResults:
                 )
 
         if not box_plot:
-            fig = fig.update_traces(error_y_color=DAA_COLORSCHEME[error_bar_colour])
+            fig = fig.update_traces(error_y_color=COLORSCHEME[error_bar_colour])
 
         if use_poppins:
             return fig.update_layout(
@@ -995,7 +969,7 @@ class TrialResults:
             markers=True,
             labels={"mean": "Average Calls Per Month", "month_start": "Month"},
             title="Number of Monthly Calls Received in Simulation",
-            color_discrete_sequence=[DAA_COLORSCHEME["navy"]],
+            color_discrete_sequence=[COLORSCHEME["navy"]],
         ).update_traces(line=dict(width=2.5))
 
         if show_individual_runs:
@@ -1123,7 +1097,7 @@ class TrialResults:
                             opacity=0.7,
                             name=str(year),  # Using the year as the trace name
                             line=dict(
-                                color=list(DAA_COLORSCHEME.values())[idx], dash="dash"
+                                color=list(COLORSCHEME.values())[idx], dash="dash"
                             ),  # Default to gray if no specific color found
                         )
                     )
@@ -1255,14 +1229,7 @@ class TrialResults:
             if not average_per_month:
                 jobs_per_day_historic_long["value"] = jobs_per_day_historic_long[
                     "value"
-                ] * (
-                    float(
-                        _processing_functions.get_param("sim_duration", self.params_df)
-                    )
-                    / 60
-                    / 24
-                    / 7
-                )
+                ] * (float(get_param("sim_duration", self.params_df)) / 60 / 24 / 7)
 
             jobs_per_day_historic_agg = (
                 jobs_per_day_historic_long.groupby(["day"])["value"].agg(
@@ -1314,16 +1281,7 @@ class TrialResults:
             if average_per_month:
                 self.daily_calls_per_run["average_per_month"] = (
                     self.daily_calls_per_run["count"]
-                    / (
-                        float(
-                            _processing_functions.get_param(
-                                "sim_duration", self.params_df
-                            )
-                        )
-                        / 60
-                        / 24
-                        / 7
-                    )
+                    / (float(get_param("sim_duration", self.params_df)) / 60 / 24 / 7)
                 )
                 y_column = "average_per_month"
                 y_label = "Average Monthly Calls Per Day Across Simulation<br>Averaged Across Simulation Runs"
@@ -1338,7 +1296,7 @@ class TrialResults:
                     y=self.daily_calls_per_run[y_column],
                     name="Simulated Mean",
                     width=0.4,
-                    marker=dict(color=DAA_COLORSCHEME[bar_colour]),
+                    marker=dict(color=COLORSCHEME[bar_colour]),
                     showlegend=True,
                     boxpoints="outliers",  # Show all data points
                 )
@@ -1373,12 +1331,7 @@ class TrialResults:
             # Add the bar trace if plotting averages across
             if average_per_month:
                 aggregated_data["mean_count"] = aggregated_data["mean_count"] / (
-                    float(
-                        _processing_functions.get_param("sim_duration", self.params_df)
-                    )
-                    / 60
-                    / 24
-                    / 7
+                    float(get_param("sim_duration", self.params_df)) / 60 / 24 / 7
                 )
                 # aggregated_data['std_count'] = (
                 #     aggregated_data['std_count'] /
@@ -1386,12 +1339,7 @@ class TrialResults:
                 #     )
 
                 aggregated_data["se_count"] = aggregated_data["se_count"] / (
-                    float(
-                        _processing_functions.get_param("sim_duration", self.params_df)
-                    )
-                    / 60
-                    / 24
-                    / 7
+                    float(get_param("sim_duration", self.params_df)) / 60 / 24 / 7
                 )
 
                 fig.add_trace(
@@ -1400,7 +1348,7 @@ class TrialResults:
                         y=aggregated_data["mean_count"],
                         name="Simulated Mean",
                         marker=dict(
-                            color=DAA_COLORSCHEME[bar_colour]
+                            color=COLORSCHEME[bar_colour]
                         ),  # Use your color scheme
                         error_y=dict(type="data", array=error_y, visible=True)
                         if error_y is not None
@@ -1426,7 +1374,7 @@ class TrialResults:
                         y=aggregated_data["mean_count"],
                         name="Simulated Mean",
                         marker=dict(
-                            color=DAA_COLORSCHEME[bar_colour]
+                            color=COLORSCHEME[bar_colour]
                         ),  # Use your color scheme
                         error_y=dict(type="data", array=error_y, visible=True)
                         if error_y is not None
@@ -1445,7 +1393,7 @@ class TrialResults:
                 )
 
         if not box_plot:
-            fig = fig.update_traces(error_y_color=DAA_COLORSCHEME[error_bar_colour])
+            fig = fig.update_traces(error_y_color=COLORSCHEME[error_bar_colour])
 
         fig.update_xaxes(categoryorder="array", categoryarray=self.day_order)
 
@@ -2362,9 +2310,7 @@ class TrialResults:
         try:
             perc_unattendable = num_unattendable / total_calls
 
-            sim_duration_days = float(
-                _processing_functions.get_param("sim_duration_days", self.params_df)
-            )
+            sim_duration_days = float(get_param("sim_duration_days", self.params_df))
 
             total_average_calls_missed_per_year = (
                 num_unattendable / self.n_runs / sim_duration_days
@@ -2410,9 +2356,7 @@ class TrialResults:
             .reset_index(name="jobs")
         )
 
-        sim_duration_days = float(
-            _processing_functions.get_param("sim_duration_days", self.params_df)
-        )
+        sim_duration_days = float(get_param("sim_duration_days", self.params_df))
 
         # print(jobs_per_run.head())
         # print(jobs_per_run.jobs)
@@ -2452,9 +2396,7 @@ class TrialResults:
         self.missed_jobs_per_run_care_cat_summary["jobs_per_year_max"] = (
             (
                 self.missed_jobs_per_run_care_cat_summary["jobs_max"]
-                / float(
-                    _processing_functions.get_param("sim_duration_days", self.params_df)
-                )
+                / float(get_param("sim_duration_days", self.params_df))
             )
             * 365
         ).round(0)
@@ -2512,8 +2454,8 @@ class TrialResults:
                 "vehicle_type": "Vehicle Type",
             },
             color_discrete_map={
-                "Car": DAA_COLORSCHEME.get(car_colour, "blue"),
-                "Helicopter": DAA_COLORSCHEME.get(helicopter_colour, "red"),
+                "Car": COLORSCHEME.get(car_colour, "blue"),
+                "Helicopter": COLORSCHEME.get(helicopter_colour, "red"),
             },
             category_orders={"callsign": sorted_callsigns},
         )
@@ -2554,7 +2496,7 @@ class TrialResults:
                     x0=min_val,
                     y1=y_pos_end,
                     x1=max_val,
-                    fillcolor=DAA_COLORSCHEME.get(
+                    fillcolor=COLORSCHEME.get(
                         "historical_box_fill", "rgba(0,0,0,0.08)"
                     ),
                     line=dict(color="rgba(0,0,0,0)"),
@@ -2571,7 +2513,7 @@ class TrialResults:
                     x1=mean_val,
                     line=dict(
                         dash="dot",
-                        color=DAA_COLORSCHEME.get("charcoal", "black"),
+                        color=COLORSCHEME.get("charcoal", "black"),
                         width=2,
                     ),
                     layer="below",
@@ -2584,7 +2526,7 @@ class TrialResults:
                         text=[f"Hist. Mean: {mean_val:.0%}"],
                         mode="text",
                         textfont=dict(
-                            color=DAA_COLORSCHEME.get("charcoal", "black"), size=10
+                            color=COLORSCHEME.get("charcoal", "black"), size=10
                         ),
                         hoverinfo="skip",
                         showlegend=False,
@@ -2600,7 +2542,7 @@ class TrialResults:
                 font=dict(
                     family="Poppins",
                     size=18,
-                    color=DAA_COLORSCHEME.get("charcoal", "black"),
+                    color=COLORSCHEME.get("charcoal", "black"),
                 )
             )
         else:
@@ -2608,7 +2550,7 @@ class TrialResults:
                 font=dict(
                     family="Arial, sans-serif",
                     size=12,
-                    color=DAA_COLORSCHEME.get("charcoal", "black"),
+                    color=COLORSCHEME.get("charcoal", "black"),
                 )
             )
 
@@ -2640,8 +2582,8 @@ class TrialResults:
         - The `vehicle_type` column values are capitalized for consistency.
         - The y-axis values are formatted as percentages with no decimal places.
         - A custom color scheme is applied based on vehicle type:
-        - "Car" is mapped to `DAA_COLORSCHEME["blue"]`.
-        - "Helicopter" is mapped to `DAA_COLORSCHEME["red"]`.
+        - "Car" is mapped to `COLORSCHEME["blue"]`.
+        - "Helicopter" is mapped to `COLORSCHEME["red"]`.
 
         Example
         -------
@@ -2671,8 +2613,8 @@ class TrialResults:
                 "vehicle_type": "Vehicle Type",
             },
             color_discrete_map={
-                "Car": DAA_COLORSCHEME.get(car_colour, "blue"),  # Use .get for safety
-                "Helicopter": DAA_COLORSCHEME.get(helicopter_colour, "red"),
+                "Car": COLORSCHEME.get(car_colour, "blue"),  # Use .get for safety
+                "Helicopter": COLORSCHEME.get(helicopter_colour, "red"),
             },
             # barmode='group' is default when color is used, which is good.
         )
@@ -2729,7 +2671,7 @@ class TrialResults:
                     y0=min_val,
                     x1=x_pos_end,
                     y1=max_val,
-                    fillcolor=DAA_COLORSCHEME.get(
+                    fillcolor=COLORSCHEME.get(
                         "historical_box_fill", "rgba(0,0,0,0.08)"
                     ),
                     line=dict(color="rgba(0,0,0,0)"),  # No border for the box
@@ -2747,7 +2689,7 @@ class TrialResults:
                     y1=mean_val,
                     line=dict(
                         dash="dot",
-                        color=DAA_COLORSCHEME.get("charcoal", "black"),
+                        color=COLORSCHEME.get("charcoal", "black"),
                         width=2,
                     ),
                     layer="below",  # Draw below main bars
@@ -2764,7 +2706,7 @@ class TrialResults:
                         text=[f"Historical: {mean_val * 100:.0f}%"],  # Simpler label
                         mode="text",
                         textfont=dict(
-                            color=DAA_COLORSCHEME.get("charcoal", "black"), size=10
+                            color=COLORSCHEME.get("charcoal", "black"), size=10
                         ),
                         hoverinfo="skip",
                         showlegend=False,
@@ -2780,7 +2722,7 @@ class TrialResults:
                 font=dict(
                     family="Poppins",
                     size=18,
-                    color=DAA_COLORSCHEME.get("charcoal", "black"),
+                    color=COLORSCHEME.get("charcoal", "black"),
                 )
             )
         else:  # Apply a default font for better appearance
@@ -2788,7 +2730,7 @@ class TrialResults:
                 font=dict(
                     family="Arial, sans-serif",
                     size=12,
-                    color=DAA_COLORSCHEME.get("charcoal", "black"),
+                    color=COLORSCHEME.get("charcoal", "black"),
                 )
             )
 
@@ -3038,7 +2980,7 @@ class TrialResults:
                     y=filtered_data["percentage_of_group"],
                     x=filtered_data["callsign_group"],
                     name=f"Simulated - {vehicle}",
-                    marker=dict(color=list(DAA_COLORSCHEME.values())[idx]),
+                    marker=dict(color=list(COLORSCHEME.values())[idx]),
                     width=0.3,
                     opacity=0.6,  # Same opacity for consistency
                     text=[
@@ -3090,7 +3032,7 @@ class TrialResults:
                         name=f"Expected Level - {callsign}",
                         showlegend=False,
                         hoverinfo="all",
-                        line=dict(dash="dash", color=DAA_COLORSCHEME["charcoal"]),
+                        line=dict(dash="dash", color=COLORSCHEME["charcoal"]),
                     )
                 )
 
@@ -3608,24 +3550,24 @@ class TrialResults:
                         )
                     )
 
-                # if colour_by_cc_ec: # Logic for this needs DAA_COLORSCHEME and potentially cc_ec_reg_colour_lookup
+                # if colour_by_cc_ec: # Logic for this needs COLORSCHEME and potentially cc_ec_reg_colour_lookup
                 #     if not callsign_df.empty and 'care_cat' in callsign_df.columns:
                 #         cc_ec_status = callsign_df["care_cat"].values[0] # This might need adjustment if multiple care_cat per callsign
                 #         # cc_ec_reg_colour_lookup would also be needed here
-                #         # marker_val = dict(color=list(DAA_COLORSCHEME.values())[cc_ec_reg_colour_lookup[cc_ec_status]])
+                #         # marker_val = dict(color=list(COLORSCHEME.values())[cc_ec_reg_colour_lookup[cc_ec_status]])
                 #     else:
-                #         marker_val = dict(color=list(DAA_COLORSCHEME.values())[idx % len(DAA_COLORSCHEME)])
+                #         marker_val = dict(color=list(COLORSCHEME.values())[idx % len(COLORSCHEME)])
                 # else: # Fallback or default coloring
                 if show_outline:
                     marker_val = dict(
-                        color=list(DAA_COLORSCHEME.values())[
-                            idx % len(DAA_COLORSCHEME)
+                        color=list(COLORSCHEME.values())[
+                            idx % len(COLORSCHEME)
                         ],  # Use modulo for safety
                         line=dict(color="#FFA400", width=0.2),
                     )
                 else:
                     marker_val = dict(
-                        color=list(DAA_COLORSCHEME.values())[idx % len(DAA_COLORSCHEME)]
+                        color=list(COLORSCHEME.values())[idx % len(COLORSCHEME)]
                     )  # Use modulo
 
                 # Add in boxes showing the duration of individual calls
@@ -3791,7 +3733,7 @@ class TrialResults:
                 self.utilisation_df_overall,
                 x="resource_use_duration",
                 y="vehicle_type",
-                color_discrete_sequence=list(DAA_COLORSCHEME.values()),
+                color_discrete_sequence=list(COLORSCHEME.values()),
                 labels={
                     "resource_use_duration": "Resource Use Duration (minutes)",
                     "vehicle_type": "Vehicle Type",
@@ -3803,7 +3745,7 @@ class TrialResults:
                 x="resource_use_duration",
                 y="vehicle_type",
                 color="run_number",
-                color_discrete_sequence=list(DAA_COLORSCHEME.values()),
+                color_discrete_sequence=list(COLORSCHEME.values()),
                 labels={
                     "resource_use_duration": "Resource Use Duration (minutes)",
                     "vehicle_type": "Vehicle Type",
@@ -3849,17 +3791,15 @@ class TrialResults:
         # after the warm-up period elapsed
         # TODO: need to add in a check to ensure this only happens for calls at the end of the model,
         # not due to errors elsewhere that could fail to assign a resource end time
-        resource_use_wide = _processing_functions.fill_missing_values(
+        resource_use_wide = fill_missing_values(
             resource_use_wide,
             "resource_use",
-            _processing_functions.get_param("warm_up_end_date", self.params_df),
+            get_param("warm_up_end_date", self.params_df),
         )
 
         # Calculate number of minutes the attending resource was in use on each call
-        resource_use_wide["resource_use_duration"] = (
-            _processing_functions.calculate_time_difference(
-                resource_use_wide, "resource_use", "resource_use_end", unit="minutes"
-            )
+        resource_use_wide["resource_use_duration"] = calculate_time_difference(
+            resource_use_wide, "resource_use", "resource_use_end", unit="minutes"
         )
 
         # Calculate average duration per HEMS result
@@ -3877,7 +3817,7 @@ class TrialResults:
             x="resource_use_duration",
             y=y,
             color=color,
-            color_discrete_sequence=list(DAA_COLORSCHEME.values()),
+            color_discrete_sequence=list(COLORSCHEME.values()),
             category_orders={y: sorted_results},
             labels={
                 "resource_use_duration": "Resource Use Duration (minutes)",
@@ -4097,9 +4037,7 @@ is sufficiently similar to what has been observed historically.
             & (counts_df_summary["care_cat"] == "CC")
         ]
 
-        run_duration_days = float(
-            _processing_functions.get_param("sim_duration_days", self.params_df)
-        )
+        run_duration_days = float(get_param("sim_duration_days", self.params_df))
 
         return (
             (row_of_interest["mean"].values[0] / run_duration_days) * 365,
@@ -4127,9 +4065,7 @@ is sufficiently similar to what has been observed historically.
             & (counts_df_summary["heli_benefit"] == "y")
         ]
 
-        run_duration_days = float(
-            _processing_functions.get_param("sim_duration_days", self.params_df)
-        )
+        run_duration_days = float(get_param("sim_duration_days", self.params_df))
 
         return (
             (row_of_interest["mean"].values[0] / run_duration_days) * 365,

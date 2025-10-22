@@ -9,9 +9,9 @@ from utils import Utils, SeededDistribution
 from class_patient import Patient
 
 # Revised class for HEMS availability
-from class_hems_availability import HEMSAvailability
-from class_hems import HEMS
-from class_ambulance import Ambulance
+from air_ambulance_des.class_hems_availability import HEMSAvailability
+from air_ambulance_des.class_hems import HEMS
+from air_ambulance_des.class_ambulance import Ambulance
 from datetime import timedelta
 import warnings
 import numpy as np
