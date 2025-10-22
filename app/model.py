@@ -1242,7 +1242,7 @@ the overall time period.*
                         p_df = trial_results.run_results[
                             (trial_results.run_results.P_ID == patient_filter)
                             & (trial_results.run_results.run_number == idx + 1)
-                        ]
+                        ].copy()
 
                         p_df["time_type"] = p_df["time_type"].astype("str")
 

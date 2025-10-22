@@ -592,9 +592,9 @@ class TrialResults:
         # backfill this per patient/run so we'll have access to it from the row for
         # the patient's arrival
         run_results_bfilled = self.run_results.copy()
-        print("==run results bfilled==")
-        print(run_results_bfilled.head())
-        print(run_results_bfilled.columns)
+        # print("==run results bfilled==")
+        # print(run_results_bfilled.head())
+        # print(run_results_bfilled.columns)
 
         if "P_ID" not in run_results_bfilled.columns:
             run_results_bfilled = run_results_bfilled.reset_index()
@@ -2976,7 +2976,7 @@ class TrialResults:
             .copy()
         )
 
-        print(jobs_by_callsign_long)
+        # print(jobs_by_callsign_long)
 
         all_combinations = pd.MultiIndex.from_product(
             [
@@ -3021,7 +3021,7 @@ class TrialResults:
             "percentage_of_group"
         ].fillna(0)
 
-        print(jobs_by_callsign_long)
+        # print(jobs_by_callsign_long)
 
         fig = go.Figure()
 
@@ -3728,12 +3728,12 @@ class TrialResults:
     ):
         fig = go.Figure()
 
-        print(self.historical_data.historical_job_durations_breakdown)
+        # print(self.historical_data.historical_job_durations_breakdown)
         historical_activity_times_overall = (
             self.historical_data.historical_job_durations_breakdown[
                 self.historical_data.historical_job_durations_breakdown["name"]
                 == "total_duration"
-            ]
+            ].copy()
         )
 
         historical_activity_times_overall["what"] = "Historical"
