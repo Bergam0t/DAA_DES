@@ -9,14 +9,13 @@ from datetime import datetime
 import gc
 
 from _app_utils import (
-    COLORSCHEME,
-    iconMetricContainer,
     get_text,
     get_text_sheet,
-    format_diff,
     summary_sidebar,
     generate_quarto_report,
 )
+
+from air_ambulance_des.utils import iconMetricContainer, COLORSCHEME, format_diff
 
 # Workaround to deal with relative import issues
 # https://discuss.streamlit.io/t/importing-modules-in-pages/26853/2
