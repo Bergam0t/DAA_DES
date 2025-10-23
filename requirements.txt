@@ -26,3 +26,5 @@ ipykernel==6.29.5
 pytest==8.3.4
 pytest-cov==6.0.0
 pytest-html==4.1.1
+quartodoc==0.11.1
+-e .
