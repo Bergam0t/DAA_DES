@@ -161,7 +161,7 @@ class TrialResults:
 
         self.sim_averages_utilisation = None
 
-        self.daily_availability_df = None
+        self.daily_availability_df = daily_availability_data
 
         self.event_counts_df = None
         self.event_counts_long = None
