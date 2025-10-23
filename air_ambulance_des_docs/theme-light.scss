@@ -1,0 +1,18 @@
+/*-- scss:defaults --*/
+
+// Sidebar colors
+$sidebar-bg: #00205B;  // Background color
+$sidebar-fg: #ffffff;
+
+$body-bg: #e2f1f2;
+$code-block-bg: #b5eff1;
+$link-color: #D50032;
+
+/* Sidebar header fix */
+.sidebar-title,
+.sidebar-header,
+.sidebar .sidebar-header h1,
+.sidebar .sidebar-header h2,
+.sidebar .sidebar-header h3 {
+  color: $sidebar-fg !important;
+}
