@@ -268,6 +268,7 @@ if button_run_pressed:
                 simulation_inputs=simulation_inputs,
                 historical_data=historical_data,
                 run_results=pd.read_csv("data/run_results.csv"),
+                daily_availability_data=pd.read_csv("data/daily_availability.csv"),
             )
             print("trial results object created successfully")
         except FileNotFoundError:

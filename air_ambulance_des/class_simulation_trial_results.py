@@ -114,7 +114,11 @@ class TrialResults:
     """
 
     def __init__(
-        self, simulation_inputs, run_results: pd.DataFrame, historical_data=None
+        self,
+        simulation_inputs,
+        run_results: pd.DataFrame,
+        daily_availability_data: pd.DataFrame,
+        historical_data=None,
     ):
         self.run_results = run_results
 
@@ -192,14 +196,14 @@ class TrialResults:
 
         # Add extra useful columns to run results
         self.enhance_run_results()
+        # Add extra useful columns to the daily availability data
+        self.update_daily_availability_df()
         # Create self.call_df
         self.make_job_count_df()
         # Create self.hourly_calls_per_run
         self.get_hourly_calls_per_run()
         # Create self.daily_calls_per_run
         self.get_daily_calls_per_run()
-        # Create self.daily_availability_df
-        self.get_daily_availability_df()
         # Create simulation event duration breakdown and summary
         self.create_simulation_event_duration_df()
         self.summarise_event_times()
@@ -262,16 +266,14 @@ class TrialResults:
             .rename(columns={"time_type": "Resource Allocation Attempt Outcome"})
         ).copy()
 
-    def get_daily_availability_df(self):
-        self.daily_availability_df = (
-            pd.read_csv("data/daily_availability.csv")
-            .melt(id_vars="month")
-            .rename(
-                columns={
-                    "value": "theoretical_availability",
-                    "variable": "callsign",
-                }
-            )
+    def update_daily_availability_df(self):
+        self.daily_availability_df = self.daily_availability_df.melt(
+            id_vars="month"
+        ).rename(
+            columns={
+                "value": "theoretical_availability",
+                "variable": "callsign",
+            }
         )
 
     def calculate_available_hours(self, summer_start, summer_end):
