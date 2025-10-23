@@ -9,7 +9,6 @@ from . import class_ambulance
 from . import class_hems_availability
 from . import class_hems
 from . import class_historic_results
-from . import class_input_data
 from . import class_patient
 from . import class_simulation_inputs
 from . import class_simulation_trial_results
@@ -23,7 +22,6 @@ __all__ = [
     "class_hems_availability",
     "class_hems",
     "class_historic_results",
-    "class_input_data",
     "class_patient",
     "class_simulation_inputs",
     "class_simulation_trial_results",
@@ -32,3 +30,7 @@ __all__ = [
     "distribution_fit_utils",
     "utils",
 ]
+
+"""
+.. include:: ../README.md
+"""
