@@ -237,3 +237,5 @@ historical_data/calculated/SIM_hist_params.csv
 # Ignore vscode config files, which are likely to be individual to each contributor
 .vscode/
 app/inputs/~$parameter_template.xlsx
+
+_freeze/
