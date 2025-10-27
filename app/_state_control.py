@@ -76,6 +76,9 @@ def reset_to_defaults(reset_session_state=True, reset_csvs=True, notify=True):
         for session_state_key, session_state_default_value in DEFAULT_INPUTS.items():
             st.session_state[session_state_key] = session_state_default_value
 
+    # Overwrite csvs in data folder with their DEFAULT counterparts
+    # TODO: This could be refactored to cycle through each csv in this folder automatically.
+    # All files in this folder should have a DEFAULT counterpart.
     if reset_csvs:
         callsign_registration_lookup = pd.read_csv(
             "actual_data/callsign_registration_lookup_DEFAULT.csv"
@@ -83,9 +86,6 @@ def reset_to_defaults(reset_session_state=True, reset_csvs=True, notify=True):
         callsign_registration_lookup.to_csv(
             "actual_data/callsign_registration_lookup.csv", index=False
         )
-
-        models = pd.read_csv("actual_data/service_schedules_by_model_DEFAULT.csv")
-        models.to_csv("actual_data/service_schedules_by_model.csv", index=False)
 
         base_rota = pd.read_csv("actual_data/HEMS_ROTA_DEFAULT.csv")
         base_rota.to_csv("actual_data/HEMS_ROTA.csv", index=False)
@@ -97,13 +97,34 @@ def reset_to_defaults(reset_session_state=True, reset_csvs=True, notify=True):
             "actual_data/rota_start_end_months.csv", index=False
         )
 
+        models = pd.read_csv("actual_data/service_schedules_by_model_DEFAULT.csv")
+        models.to_csv("actual_data/service_schedules_by_model.csv", index=False)
+
+        school_holidays = pd.read_csv("actual_data/school_holidays_DEFAULT.csv")
+        school_holidays.to_csv("actual_data/school_holidays.csv", index=False)
+
         service_history = pd.read_csv("actual_data/service_history_DEFAULT.csv")
         service_history.to_csv("actual_data/service_history.csv", index=False)
+
+        service_schedules_by_model = pd.read_csv(
+            "actual_data/service_schedules_by_model_DEFAULT.csv"
+        )
+        service_schedules_by_model.to_csv(
+            "actual_data/service_schedules_by_model.csv", index=False
+        )
+
+        upper_allowable_time_bounds = pd.read_csv(
+            "actual_data/upper_allowable_time_bounds_DEFAULT.csv"
+        )
+        upper_allowable_time_bounds.to_csv(
+            "actual_data/upper_allowable_time_bounds.csv", index=False
+        )
 
     if notify:
         st.toast(
             "All parameters have been reset to the default values",
             icon=":material/history:",
+            duration="long",
         )
 
 
