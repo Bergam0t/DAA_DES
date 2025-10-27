@@ -54,10 +54,153 @@ st.button(
 )
 st.caption(get_text("reset_parameters_warning", text_df))
 
+
+st.info("You can either import")
+
+setup_type = st.radio(
+    "Choose how to set model parameters",
+    [
+        "Set parameters from Excel Template",
+        "Choose a predefined scenario",
+        "Set parameters manually",
+    ],
+)
+
 st.divider()
 
-st.header("HEMS Rota Builder")
+if setup_type == "Set parameters from Excel Template":
+    col_download, col_upload = st.columns([0.3, 0.7])
 
+    @st.fragment
+    def download_template():
+        st.download_button(
+            "Download file template", data="inputs/parameter_template.xlsx"
+        )
+
+    with col_download:
+        st.write("Click the button to download an Excel template you can fill in.")
+        download_template()
+
+    with col_upload:
+        uploaded_file = st.file_uploader(
+            label="Upload a completed template",
+            accept_multiple_files=False,
+            type=".xlsx",
+        )
+
+    if uploaded_file is not None:
+        callsign_registration_lookup = pd.read_excel(
+            uploaded_file, sheet_name="callsign_registration_lookup"
+        )
+
+        hems_rota = pd.read_excel(uploaded_file, sheet_name="HEMS_ROTA")
+
+        service_schedules_by_model = pd.read_excel(
+            uploaded_file, sheet_name="service_schedules_by_model"
+        )
+        rota_start_end_months = pd.read_excel(
+            uploaded_file, sheet_name="rota_start_end_months"
+        )
+
+        service_history = pd.read_excel(uploaded_file, sheet_name="service_history")
+
+        upper_allowable_time_bounds = pd.read_excel(
+            uploaded_file, sheet_name="upper_allowable_time_bounds"
+        )
+
+        additional_parameters = pd.read_excel(
+            uploaded_file, sheet_name="additional_parameters"
+        )
+
+        input_data_files = {
+            "callsign_registration_lookup": callsign_registration_lookup,
+            "hems_rota": hems_rota,
+            "service_schedules_by_model": service_schedules_by_model,
+            "rota_start_end_months": rota_start_end_months,
+            "service_history": service_history,
+            "upper_allowable_time_bounds": upper_allowable_time_bounds,
+        }
+
+        for name, df in input_data_files.items():
+            df.to_csv(f"test/{name}.csv", index=False)
+
+        st.info(
+            "Here are your uploaded parameters. Please check these look correct, and update and reupload your parameter file if they are not.\n\n"
+            "When you are happy, click on the 'Run Simulation' button in the left-hand bar."
+        )
+
+        st.subheader("Available Resources")
+
+        st.dataframe(callsign_registration_lookup, hide_index=True)
+
+        st.subheader("Rota")
+
+        st.dataframe(hems_rota, hide_index=True)
+
+        st.subheader("Service Schedules per model")
+
+        st.dataframe(service_schedules_by_model, hide_index=True)
+
+        st.subheader("Summer and Winter Rota Start and End Months")
+
+        st.dataframe(rota_start_end_months, hide_index=True)
+
+        st.subheader("Servicing History")
+
+        st.dataframe(service_history, hide_index=True)
+
+        st.subheader("Minimum and Maximum Durations for Activities")
+
+        st.dataframe(upper_allowable_time_bounds, hide_index=True)
+
+        st.subheader("Additional Parameters")
+
+        st.dataframe(additional_parameters.T, hide_index=True)
+
+        st.session_state.number_of_runs_input = additional_parameters[
+            additional_parameters["parameter"] == "number_of_runs"
+        ]["value"].values[0]
+
+        st.session_state.sim_duration_input = additional_parameters[
+            additional_parameters["parameter"] == "simulation_duration_days"
+        ]["value"].values[0]
+
+        st.session_state.warm_up_duration = additional_parameters[
+            additional_parameters["parameter"] == "simulation_warm_up_duration_hours"
+        ]["value"].values[0]
+
+        st.session_state.sim_start_date_input = (
+            additional_parameters[
+                additional_parameters["parameter"] == "simulation_start_date"
+            ]["value"]
+            .values[0]
+            .strftime("%Y-%m-%d")
+        )
+
+        sim_start_time_input = additional_parameters[
+            additional_parameters["parameter"] == "simulation_start_time"
+        ]["value"].values[0]
+
+        st.session_state.sim_start_time_input = pd.to_datetime(
+            f"{st.session_state.sim_start_date_input} {sim_start_time_input}"
+        ).strftime("%H:%M")
+
+        st.session_state.master_seed = additional_parameters[
+            additional_parameters["parameter"] == "master_random_seed"
+        ]["value"].values[0]
+
+        st.session_state.activity_duration_multiplier = float(
+            additional_parameters[
+                additional_parameters["parameter"] == "activity_duration_multiplier"
+            ]["value"].values[0]
+        )
+
+
+elif setup_type == "Choose a predefined scenario":
+    st.info("Coming soon!")
+
+else:
+    st.header("HEMS Rota Builder")
 
 @st.fragment
 def rota_start_end_dates():
