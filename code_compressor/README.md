@@ -6,7 +6,7 @@ Skipped directories, file types and specific file name patterns are controlled i
 
 To run, starting in the root dir, run
 
-`cd code_documenter`
+`cd code_compressor`
 
 `python repo_to_text.py --cfg ../config.yaml --repo_path ../  -w 100000 -o output_py`
 

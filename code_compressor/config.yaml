@@ -13,8 +13,16 @@ skip_dirs:
     - "*pytest_cache"
     - ".pytest_cache"
     - "htmlcov"
-    - "code_documenter"
+    - "auto_code_documenter"
     - "external_data"
+    - "data"
+    - "historical_data"
+    - "actual_data"
+    - "_freeze"
+    - "visualisation"
+    - "docs_quarto"
+    - ".quarto"
+
 
 skip_patterns:
     - "*.pyc"
@@ -55,3 +63,8 @@ skip_patterns:
     - "*__init__*"
     - "*distribution_data/archive/*"
     - "*quarto_ipynb*"
+    - "*.wav"
+    - "*.js"
+    - "air_ambulance_des_docs/.quarto/*"
+    - "air_ambulance_des_docs/reference/*"
+    - "air_ambulance_des.egg-info/*"
